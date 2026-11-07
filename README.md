@@ -16,6 +16,8 @@ All images are multi-arch (`linux/amd64`, `linux/arm64`) under `ghcr.io/curantes
 
 | Image | Streams | `<stream>` | `<stream>-dev` |
 |---|---|---|---|
+| `static` | `latest` | CA certificates, tzdata, `/etc/passwd`; no libc, no shell. For static binaries (Go with `CGO_ENABLED=0`) | – |
+| `glibc-dynamic` | `latest` | `static` plus glibc, libgcc and libstdc++. For dynamically linked binaries (cgo, Rust, C/C++) | adds bash, busybox and `apk` |
 | `python` | `3.11`–`3.15` | CPython; distroless (no shell, no `apk`, no pip) | adds pip, Python headers, `build-base`, bash, busybox and `apk` |
 
 The current streams and their status are in [`generated/catalog.json`](generated/catalog.json).
@@ -26,6 +28,7 @@ The current streams and their status are in [`generated/catalog.json`](generated
 - After its EOL date a stream is **deprecated** for 30 days: it is still rebuilt, and its images carry `io.github.curantes.wolfi-images.status: deprecated`.
 - Then it is **frozen**: it is no longer rebuilt and its tags stay where they are. Migrate before then.
 - Supported cycles that Wolfi doesn't package are listed in the `stream-missing` issue.
+- Images whose product isn't on endoflife.date follow Wolfi: `static` and `glibc-dynamic` have one rolling `latest` stream; others build Wolfi's newest minor version, and the previous minor's tags freeze when it moves on.
 
 ## Tags
 

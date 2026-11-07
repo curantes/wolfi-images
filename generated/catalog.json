@@ -1,5 +1,15 @@
 {
   "images": {
+    "glibc-dynamic": {
+      "endoflife": null,
+      "streams": {
+        "latest": {
+          "status": "supported",
+          "eol": null
+        }
+      },
+      "missing": {}
+    },
     "python": {
       "endoflife": "python",
       "streams": {
@@ -25,9 +35,41 @@
         }
       },
       "missing": {}
+    },
+    "static": {
+      "endoflife": null,
+      "streams": {
+        "latest": {
+          "status": "supported",
+          "eol": null
+        }
+      },
+      "missing": {}
     }
   },
   "builds": [
+    {
+      "name": "glibc-dynamic",
+      "tag": "latest",
+      "stream": "latest",
+      "variant": "",
+      "package": null,
+      "status": "supported",
+      "eol": null,
+      "config": "generated/glibc-dynamic/latest.apko.yaml",
+      "lock": "generated/glibc-dynamic/latest.lock.json"
+    },
+    {
+      "name": "glibc-dynamic",
+      "tag": "latest-dev",
+      "stream": "latest",
+      "variant": "dev",
+      "package": null,
+      "status": "supported",
+      "eol": null,
+      "config": "generated/glibc-dynamic/latest-dev.apko.yaml",
+      "lock": "generated/glibc-dynamic/latest-dev.lock.json"
+    },
     {
       "name": "python",
       "tag": "3.15",
@@ -137,6 +179,17 @@
       "eol": "2027-10-31",
       "config": "generated/python/3.11-dev.apko.yaml",
       "lock": "generated/python/3.11-dev.lock.json"
+    },
+    {
+      "name": "static",
+      "tag": "latest",
+      "stream": "latest",
+      "variant": "",
+      "package": null,
+      "status": "supported",
+      "eol": null,
+      "config": "generated/static/latest.apko.yaml",
+      "lock": "generated/static/latest.lock.json"
     }
   ]
 }

@@ -14,6 +14,10 @@ For every images/<name>/image.yaml:
 4. Write generated/catalog.json and generated/<name>/<tag>.apko.yaml, and
    remove configs and locks of streams that are no longer built.
 
+Products without endoflife.date data have one rolling stream (see
+rolling_releases); `newest-only: true` builds only the newest cycle Wolfi
+provides (see wolfi_streams).
+
 Locks are written separately by scripts/lock.sh (needs apko).
 
 Usage: generate.py [--today YYYY-MM-DD] [--offline DIR]
@@ -101,13 +105,14 @@ def version_key(version: str) -> list[int]:
     return [int(n) for n in re.findall(r"\d+", version.split("-r")[0].split("_")[0])]
 
 
-def subst(value, stream: str):
+def subst(value, stream: str, package: str | None = None):
     if isinstance(value, str):
-        return value.replace("{stream}", stream)
+        value = value.replace("{stream}", stream)
+        return value.replace("{package}", package) if package else value
     if isinstance(value, list):
-        return [subst(v, stream) for v in value]
+        return [subst(v, stream, package) for v in value]
     if isinstance(value, dict):
-        return {k: subst(v, stream) for k, v in value.items()}
+        return {k: subst(v, stream, package) for k, v in value.items()}
     return value
 
 
@@ -116,24 +121,92 @@ def in_wolfi(indexes, names: list[str]) -> list[str]:
     return sorted({f"{n} ({arch})" for arch, idx in indexes.items() for n in names if n not in idx})
 
 
-def wolfi_streams(spec: dict, releases: list[dict], indexes) -> dict[str, list[str]]:
-    """endoflife.date cycle -> packages missing from Wolfi (empty list = available)."""
-    result = {}
-    if "{stream}" in spec["package"]:
-        for rel in releases:
-            stream = rel["name"]
-            needed = sorted({p for v in spec["variants"].values() for p in subst(v["packages"], stream)})
-            result[stream] = in_wolfi(indexes, needed)
-        return result
-    # Unversioned rolling package (e.g. `rust`): only the cycle that matches
-    # the newest Wolfi version on every architecture is available.
-    versions = [max(idx.get(spec["package"], ["0"]), key=version_key) for idx in indexes.values()]
+def upstream_version(version: str) -> str:
+    """3.12.16_git20261030-r0 -> 3.12.16"""
+    return version.rsplit("-r", 1)[0].split("_")[0]
+
+
+def newest(indexes, package: str) -> str | None:
+    """Newest upstream version of a package if it is the same on every architecture."""
+    found = {upstream_version(max(idx[package], key=version_key)) for idx in indexes.values() if package in idx}
+    if len(found) != 1 or any(package not in idx for idx in indexes.values()):
+        return None
+    return found.pop()
+
+
+def in_cycle(version: str, cycle: str) -> bool:
+    return version == cycle or version.startswith(cycle + ".")
+
+
+def templates(spec: dict) -> list[str]:
+    pkg = spec.get("package")
+    return [] if pkg is None else [pkg] if isinstance(pkg, str) else list(pkg)
+
+
+def rolling_releases(spec: dict, indexes) -> list[dict]:
+    """Streams for products without endoflife.date data: one current stream.
+
+    - `stream: latest` (fixed name, e.g. static)
+    - `package: coredns-{stream}`: the newest stream Wolfi packages
+    - `package: curl`: major.minor of the newest Wolfi version
+    """
+    if "stream" in spec:
+        return [{"name": str(spec["stream"]), "isEol": False}]
+    cycles = set()
+    for tpl in templates(spec):
+        if "{stream}" in tpl:
+            rx = re.compile(re.escape(tpl).replace(re.escape("{stream}"), r"([0-9][0-9.]*)") + "$")
+            names = set.intersection(*(set(idx) for idx in indexes.values()))
+            cycles |= {m.group(1) for n in names if (m := rx.match(n))}
+        elif version := newest(indexes, tpl):
+            cycles.add(".".join(version.split(".")[:2]))
+    if not cycles:
+        raise RuntimeError(f"no Wolfi package for {templates(spec)}")
+    return [{"name": max(cycles, key=version_key), "isEol": False}]
+
+
+def wolfi_streams(spec: dict, releases: list[dict], indexes) -> dict[str, tuple[str | None, list[str]]]:
+    """cycle -> (package providing it, packages missing from Wolfi; empty = available).
+
+    A `{stream}` template names one package per cycle (python-{stream}). A plain
+    package name is a rolling package that provides the cycle matching its
+    newest version (git; nginx-stable and nginx-mainline). Variant packages may
+    use {package} for whichever package provides the cycle.
+    """
+    result: dict[str, tuple[str | None, list[str]]] = {}
     for rel in releases:
         stream = rel["name"]
-        matches = all(
-            v.split("-r")[0].split("_")[0] == stream or v.startswith(stream + ".") for v in versions
-        )
-        result[stream] = [] if matches else [f"{spec['package']} is {versions[0]}, not {stream}"]
+        provider, why = None, []
+        for tpl in templates(spec):
+            if "{stream}" in tpl:
+                candidate = tpl.replace("{stream}", stream)
+                if not in_wolfi(indexes, [candidate]):
+                    provider = candidate
+                    break
+                why.append(f"no {candidate}")
+            elif "stream" in spec:  # fixed stream name (latest): no version to match
+                if not in_wolfi(indexes, [tpl]):
+                    provider = tpl
+                    break
+                why.append(f"no {tpl}")
+            else:
+                version = newest(indexes, tpl)
+                if version and in_cycle(version, stream):
+                    provider = tpl
+                    break
+                why.append(f"{tpl} is {version or 'missing'}")
+        if templates(spec) and provider is None:
+            result[stream] = (None, why)
+            continue
+        needed = sorted({p for v in spec["variants"].values() for p in subst(v["packages"], stream, provider)})
+        result[stream] = (provider, in_wolfi(indexes, needed))
+    if spec.get("newest-only"):
+        # Only the newest cycle Wolfi provides is built; older cycles are
+        # neither built nor reported, newer ones are reported as missing.
+        ok = [s for s, (_, why) in result.items() if not why]
+        if ok:
+            top = max(ok, key=version_key)
+            result = {s: v for s, v in result.items() if version_key(s) >= version_key(top)}
     return result
 
 
@@ -161,14 +234,16 @@ def merge(base: dict, extra: dict) -> dict:
     return out
 
 
-def apko_config(base: dict, name: str, spec: dict, stream: str, variant: str, status: str, eol: str | None) -> dict:
-    v = subst(spec["variants"][variant], stream)
+def apko_config(
+    base: dict, name: str, spec: dict, stream: str, package: str | None, variant: str, status: str, eol: str | None
+) -> dict:
+    v = subst(spec["variants"][variant], stream, package)
     tag = f"{stream}-{variant}" if variant else stream
     extra: dict = {
         "contents": {"packages": v["packages"]},
         "annotations": {
             "org.opencontainers.image.title": f"{name}:{tag}",
-            "org.opencontainers.image.description": subst(spec.get("description", name), stream),
+            "org.opencontainers.image.description": subst(spec.get("description", name), stream, package),
             f"{ANNOTATION_PREFIX}.stream": stream,
             f"{ANNOTATION_PREFIX}.status": status,
         },
@@ -202,17 +277,23 @@ def main() -> int:
         if not (ROOT / "tests" / name / "test.sh").is_file():
             print(f"error: missing tests/{name}/test.sh", file=sys.stderr)
             return 1
-        releases = load_releases(spec["endoflife"], args.offline)
+        if spec.get("endoflife"):
+            releases = load_releases(spec["endoflife"], args.offline)
+        else:
+            releases = rolling_releases(spec, indexes)
         available = wolfi_streams(spec, releases, indexes)
         old_streams = old_catalog.get("images", {}).get(name, {}).get("streams", {})
         streams, missing = {}, {}
 
         for rel in releases:
             stream = rel["name"]
+            if stream not in available:
+                continue  # older than the newest cycle of a newest-only image
             status, eol = classify(rel, args.today)
-            if available[stream]:
+            package, why = available[stream]
+            if why:
                 if status == "supported":
-                    missing[stream] = available[stream]
+                    missing[stream] = why
                 elif stream in old_streams:  # dropped from Wolfi after EOL
                     streams[stream] = {"status": "frozen", "eol": eol}
                 continue
@@ -225,7 +306,7 @@ def main() -> int:
                 tag = f"{stream}-{variant}" if variant else stream
                 path = OUT / name / f"{tag}.apko.yaml"
                 path.parent.mkdir(parents=True, exist_ok=True)
-                cfg = apko_config(base, name, spec, stream, variant, status, eol)
+                cfg = apko_config(base, name, spec, stream, package, variant, status, eol)
                 path.write_text(
                     f"# Generated by scripts/generate.py from images/{name}/image.yaml; do not edit.\n"
                     + yaml.safe_dump(cfg, sort_keys=False)
@@ -238,7 +319,9 @@ def main() -> int:
                         "tag": tag,
                         "stream": stream,
                         "variant": variant,
-                        "package": subst(spec["package"], stream),
+                        # Version tags come from this package's locked version
+                        # (none for images without one, e.g. static).
+                        "package": package if spec.get("version-tag", True) else None,
                         "status": status,
                         "eol": eol,
                         "config": str(path.relative_to(ROOT)),
@@ -249,7 +332,7 @@ def main() -> int:
         for stream, entry in old_streams.items():
             streams.setdefault(stream, {**entry, "status": "frozen"})
         catalog["images"][name] = {
-            "endoflife": spec["endoflife"],
+            "endoflife": spec.get("endoflife"),
             "streams": dict(sorted(streams.items(), key=lambda kv: version_key(kv[0]), reverse=True)),
             "missing": missing,
         }
