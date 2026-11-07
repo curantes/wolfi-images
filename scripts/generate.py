@@ -10,9 +10,16 @@ For every images/<name>/image.yaml:
    - supported:  not EOL                        -> built
    - deprecated: EOL for less than GRACE_DAYS   -> built, annotated
    - frozen:     EOL for GRACE_DAYS or more     -> no longer built; tags stay
-   - missing:    supported but not in Wolfi     -> reported, not built
+   - missing:    supported but not in Wolfi, or packaged but no longer
+                 maintained there                -> reported, not built
 4. Write generated/catalog.json and generated/<name>/<tag>.apko.yaml, and
    remove configs and locks of streams that are no longer built.
+
+A stream counts as maintained only if its package's newest public build is
+at most MAX_AGE_DAYS old (per image: `max-age-days`) and Wolfi's security
+database lists no fix newer than it. Public Wolfi stops updating older
+streams (their fixes appear only in the security database), so a package
+existing is not enough.
 
 Products without endoflife.date data have one rolling stream (see
 rolling_releases); `newest-only: true` builds only the newest cycle Wolfi
@@ -44,6 +51,7 @@ ROOT = Path(__file__).resolve().parent.parent
 IMAGES = ROOT / "images"
 OUT = ROOT / "generated"
 GRACE_DAYS = 30
+MAX_AGE_DAYS = 90
 WOLFI = "https://packages.wolfi.dev/os"
 ARCHS = ["x86_64", "aarch64"]
 EOL_API = "https://endoflife.date/api/v1/products/{}"
@@ -63,18 +71,65 @@ def fetch(url: str) -> bytes:
     raise RuntimeError(f"fetching {url} failed: {last}")
 
 
-def parse_apkindex(text: str) -> dict[str, list[str]]:
-    """Package name -> versions."""
+# arch -> package -> newest build time (APKINDEX `t:`, epoch seconds)
+BUILD_TIMES: dict[str, dict[str, int]] = {}
+
+
+def parse_apkindex(text: str, arch: str = "") -> dict[str, list[str]]:
+    """Package name -> versions. Records build times in BUILD_TIMES[arch]."""
     pkgs: dict[str, list[str]] = {}
+    times = BUILD_TIMES.setdefault(arch, {})
     name = None
     for line in text.splitlines():
         if line.startswith("P:"):
             name = line[2:]
         elif line.startswith("V:") and name:
             pkgs.setdefault(name, []).append(line[2:])
+        elif line.startswith("t:") and name:
+            times[name] = max(times.get(name, 0), int(line[2:]))
         elif not line:
             name = None
     return pkgs
+
+
+def apk_key(version: str) -> tuple:
+    """Sort key for Wolfi versions: 3.12.16_git20261030-r2 -> ((3,12,16), 20261030, 2)."""
+    m = re.match(r"([\d.]+)(?:_[a-z]*?(\d*))?(?:-r(\d+))?$", version)
+    if not m:
+        return ((), 0, 0)
+    nums = tuple(int(n) for n in m.group(1).split(".") if n)
+    return (nums, int(m.group(2) or 0), int(m.group(3) or 0))
+
+
+def load_secdb(offline: Path | None) -> dict[str, list[str]]:
+    """Package -> versions that Wolfi's security database lists as fixing something."""
+    if offline:
+        data = json.loads((offline / "security.json").read_text())
+    else:
+        data = json.loads(fetch(f"{WOLFI}/security.json"))
+    return {
+        p["pkg"]["name"]: [v for v in p["pkg"].get("secfixes", {}) if v != "0"]
+        for p in data.get("packages", [])
+    }
+
+
+def maintenance(package: str, indexes, secdb, today: dt.date, max_age: int) -> list[str]:
+    """Reasons a package is not maintained in public Wolfi (empty = maintained)."""
+    why = []
+    for arch, idx in indexes.items():
+        published = max(idx[package], key=apk_key)
+        fixes = [v for v in secdb.get(package, []) if apk_key(v) > apk_key(published)]
+        if fixes:
+            why.append(
+                f"unmaintained: Wolfi lists fixes up to {max(fixes, key=apk_key)} "
+                f"but publishes {published} ({arch})"
+            )
+            break
+    built = min(BUILD_TIMES.get(arch, {}).get(package, 0) for arch in indexes)
+    age = (today - dt.datetime.fromtimestamp(built, dt.UTC).date()).days if built else None
+    if age is not None and age > max_age:
+        why.append(f"unmaintained: newest {package} build is {age} days old (limit {max_age})")
+    return why
 
 
 def load_indexes(offline: Path | None) -> dict[str, dict[str, list[str]]]:
@@ -89,7 +144,7 @@ def load_indexes(offline: Path | None) -> dict[str, dict[str, list[str]]]:
                 if member is None:
                     raise RuntimeError(f"no APKINDEX in {arch} index")
                 text = member.read().decode()
-        indexes[arch] = parse_apkindex(text)
+        indexes[arch] = parse_apkindex(text, arch)
     return indexes
 
 
@@ -188,7 +243,9 @@ def rolling_releases(spec: dict, indexes) -> list[dict]:
     return [{"name": max(cycles, key=version_key), "isEol": False}]
 
 
-def wolfi_streams(spec: dict, releases: list[dict], indexes) -> dict[str, tuple[str | None, list[str]]]:
+def wolfi_streams(
+    spec: dict, releases: list[dict], indexes, secdb=None, today: dt.date | None = None
+) -> dict[str, tuple[str | None, list[str]]]:
     """cycle -> (package providing it, packages missing from Wolfi; empty = available).
 
     A `{stream}` template names one package per cycle (python-{stream}). A plain
@@ -224,7 +281,10 @@ def wolfi_streams(spec: dict, releases: list[dict], indexes) -> dict[str, tuple[
         needed = sorted(
             {p for v in spec["variants"].values() for p in resolve_packages(v["packages"], stream, provider, indexes)[1]}
         )
-        result[stream] = (provider, in_wolfi(indexes, needed))
+        why = in_wolfi(indexes, needed)
+        if not why and provider and secdb is not None and today is not None:
+            why = maintenance(provider, indexes, secdb, today, int(spec.get("max-age-days", MAX_AGE_DAYS)))
+        result[stream] = (provider, why)
     if spec.get("newest-only"):
         # Only the newest cycle Wolfi provides is built; older cycles are
         # neither built nor reported, newer ones are reported as missing.
@@ -297,6 +357,7 @@ def main() -> int:
 
     base = yaml.safe_load((IMAGES / "base.yaml").read_text())
     indexes = load_indexes(args.offline)
+    secdb = load_secdb(args.offline)
     old_catalog = json.loads((OUT / "catalog.json").read_text()) if (OUT / "catalog.json").exists() else {}
     catalog: dict = {"images": {}, "builds": []}
     keep: set[Path] = {OUT / "catalog.json"}
@@ -311,7 +372,7 @@ def main() -> int:
             releases = load_releases(spec["endoflife"], args.offline)
         else:
             releases = rolling_releases(spec, indexes)
-        available = wolfi_streams(spec, releases, indexes)
+        available = wolfi_streams(spec, releases, indexes, secdb, args.today)
         old_streams = old_catalog.get("images", {}).get(name, {}).get("streams", {})
         streams, missing = {}, {}
 

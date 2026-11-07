@@ -31,6 +31,7 @@ Working notes. Update as items land.
 
 ## Lessons Learned
 
+- **Public Wolfi only maintains the newest stream of many products.** Older streams (nodejs-22, etcd-3.6, haproxy-3.2/3.3, nginx-stable, valkey-9.0, ...) stopped getting builds months ago while Wolfi's security database kept recording fixes for versions that were never published. The generator now requires a stream to be maintained (no unpublished fix, newest build at most 90 days old).
 - **Signing and attesting depend on Rekor**, which has transient outages: a single 500 failed the publish of three streams. `cosign` calls retry with backoff, and the attestation actions get a second attempt.
 - **apko embeds the git commit** (`org.opencontainers.image.revision`) unless built with `--vcs=false`, so every commit changed every digest.
 - **apko's release binaries are only verifiable through a Rekor log search** (`.sig`/`.crt`, no bundle), so verifying them made every build fail while Rekor's v1 search API returned 500s. Run apko from its container image pinned by digest instead.

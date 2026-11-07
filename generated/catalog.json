@@ -123,13 +123,14 @@
         "24": {
           "status": "supported",
           "eol": "2028-04-30"
-        },
-        "22": {
-          "status": "supported",
-          "eol": "2027-04-30"
         }
       },
-      "missing": {}
+      "missing": {
+        "22": [
+          "unmaintained: Wolfi lists fixes up to 22.23.4-r0 but publishes 22.23.2-r1 (x86_64)",
+          "unmaintained: newest nodejs-22 build is 92 days old (limit 90)"
+        ]
+      }
     },
     "openjdk": {
       "endoflife": "eclipse-temurin",
@@ -555,28 +556,6 @@
       "eol": "2028-04-30",
       "config": "generated/nodejs/24-dev.apko.yaml",
       "lock": "generated/nodejs/24-dev.lock.json"
-    },
-    {
-      "name": "nodejs",
-      "tag": "22",
-      "stream": "22",
-      "variant": "",
-      "package": "nodejs-22",
-      "status": "supported",
-      "eol": "2027-04-30",
-      "config": "generated/nodejs/22.apko.yaml",
-      "lock": "generated/nodejs/22.lock.json"
-    },
-    {
-      "name": "nodejs",
-      "tag": "22-dev",
-      "stream": "22",
-      "variant": "dev",
-      "package": "nodejs-22",
-      "status": "supported",
-      "eol": "2027-04-30",
-      "config": "generated/nodejs/22-dev.apko.yaml",
-      "lock": "generated/nodejs/22-dev.lock.json"
     },
     {
       "name": "openjdk",

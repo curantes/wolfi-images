@@ -19,7 +19,7 @@ All images are multi-arch (`linux/amd64`, `linux/arm64`) under `ghcr.io/curantes
 | `static` | `latest` | CA certificates, tzdata, `/etc/passwd`; no libc, no shell. For static binaries (Go with `CGO_ENABLED=0`) | – |
 | `glibc-dynamic` | `latest` | `static` plus glibc, libgcc and libstdc++. For dynamically linked binaries (cgo, Rust, C/C++) | adds bash, busybox and `apk` |
 | `go` | `1.26`, `1.27` | – (run on `static` or `glibc-dynamic`) | Go toolchain, gcc, git, ssh client, bash, `apk`; `GOTOOLCHAIN=local` |
-| `nodejs` | `22`, `24`, `26` | Node.js; distroless, no npm | adds npm, `build-base`, bash, busybox and `apk` |
+| `nodejs` | `24`, `26` | Node.js; distroless, no npm | adds npm, `build-base`, bash, busybox and `apk` |
 | `openjdk` | `8`, `11`, `17`, `21`, `25`, `27` | JRE; distroless | full JDK plus bash, busybox and `apk` |
 | `php` | `8.2`–`8.5` | PHP CLI with common extensions; distroless. Also `<stream>-fpm`: PHP-FPM on port 9000, distroless | adds Composer, git, bash, busybox and `apk` |
 | `python` | `3.11`–`3.15` | CPython; distroless (no shell, no `apk`, no pip) | adds pip, Python headers, `build-base`, bash, busybox and `apk` |
@@ -44,7 +44,8 @@ The current streams and their status are in [`generated/catalog.json`](generated
 - A stream exists while endoflife.date lists its cycle as supported **and** Wolfi packages it on both architectures.
 - After its EOL date a stream is **deprecated** for 30 days: it is still rebuilt, and its images carry `io.github.curantes.wolfi-images.status: deprecated`.
 - Then it is **frozen**: it is no longer rebuilt and its tags stay where they are. Migrate before then.
-- Supported cycles that Wolfi doesn't package are listed in the `stream-missing` issue.
+- A stream is only built while public Wolfi **maintains** it: its newest build is at most 90 days old and Wolfi's security database lists no fix newer than the published version. Public Wolfi stops updating older version streams (their fixes only show up in the security database), so a package merely existing isn't enough.
+- Supported cycles that Wolfi doesn't package or no longer maintains are listed in the `stream-missing` issue.
 - Images whose product isn't on endoflife.date follow Wolfi: `static` and `glibc-dynamic` have one rolling `latest` stream; others build Wolfi's newest minor version, and the previous minor's tags freeze when it moves on.
 
 ## Tags
