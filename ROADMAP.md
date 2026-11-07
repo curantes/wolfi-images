@@ -31,6 +31,7 @@ Working notes. Update as items land.
 
 ## Lessons Learned
 
+- **Signing and attesting depend on Rekor**, which has transient outages: a single 500 failed the publish of three streams. `cosign` calls retry with backoff, and the attestation actions get a second attempt.
 - **apko embeds the git commit** (`org.opencontainers.image.revision`) unless built with `--vcs=false`, so every commit changed every digest.
 - **apko's release binaries are only verifiable through a Rekor log search** (`.sig`/`.crt`, no bundle), so verifying them made every build fail while Rekor's v1 search API returned 500s. Run apko from its container image pinned by digest instead.
 - **The Kyverno CLI skips `imageRegistry` context lookups unless run with `--registry`**, and a rule `message` can't use `foreach` variables.
