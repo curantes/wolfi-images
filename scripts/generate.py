@@ -282,6 +282,10 @@ def apko_config(
         extra["cmd"] = v["cmd"]
     if "environment" in v:
         extra["environment"] = v["environment"]
+    if "paths" in v:  # e.g. data directories owned by nonroot
+        extra["paths"] = v["paths"]
+    if "work-dir" in v:
+        extra["work-dir"] = v["work-dir"]
     return merge(base, extra)
 
 

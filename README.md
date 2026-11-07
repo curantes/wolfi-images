@@ -24,8 +24,18 @@ All images are multi-arch (`linux/amd64`, `linux/arm64`) under `ghcr.io/curantes
 | `php` | `8.2`–`8.5` | PHP CLI with common extensions; distroless. Also `<stream>-fpm`: PHP-FPM on port 9000, distroless | adds Composer, git, bash, busybox and `apk` |
 | `python` | `3.11`–`3.15` | CPython; distroless (no shell, no `apk`, no pip) | adds pip, Python headers, `build-base`, bash, busybox and `apk` |
 | `rust` | `1.99` | – (run on `glibc-dynamic` or `static`) | rustc, cargo, clippy, rustfmt, gcc, git, bash, `apk` |
+| `coredns` | `1.14` | CoreDNS; without a Corefile answers `whoami` on port 53 (needs unprivileged low ports: Docker's default, Podman `--sysctl net.ipv4.ip_unprivileged_port_start=0`); distroless | adds bash, busybox and `apk` |
+| `curl` | `8.23` | curl with HTTP/2 and the CA bundle; entrypoint `curl`; distroless | adds bash, busybox and `apk` |
+| `etcd` | `3.6` | etcd, etcdctl, etcdutl; client 2379, peer 2380, data in `/var/lib/etcd`; distroless | adds bash, busybox and `apk` |
+| `git` | `2.56` | git with HTTPS and SSH remotes (ssh client); entrypoint `git`; distroless | adds bash, busybox and `apk` |
+| `haproxy` | `3.2`, `3.3`, `3.4` | HAProxy; no configuration, mount one at `/usr/local/etc/haproxy/haproxy.cfg`; distroless | adds bash, busybox and `apk` |
+| `nginx` | `1.30` (stable), `1.31` (mainline) | nginx serving a default page on 8080, configuration in `/etc/nginx/conf.d/`, logs to stdout/stderr; distroless | adds bash, busybox and `apk` |
+| `rabbitmq` | `4.3` | RabbitMQ broker and CLI; AMQP on 5672, data in `/var/lib/rabbitmq` (keep the hostname stable); **ships busybox sh**, since the server and CLI are shell scripts | adds bash and `apk` |
+| `valkey` | `8.1`, `9.0`, `9.1` | Valkey server and CLI on 6379, data in `/data`; protected mode refuses remote clients until a password is set; distroless | adds bash, busybox and `apk` |
 
 `openjdk` is Wolfi's OpenJDK build, following [Eclipse Temurin's support dates](https://endoflife.date/eclipse-temurin) (endoflife.date has no product for plain OpenJDK); it is not Temurin. PHP extensions: bcmath, ctype, curl, dom, fileinfo, iconv, intl, mbstring, mysqlnd, opcache, openssl, PDO (MySQL, PostgreSQL, SQLite), posix, simplexml, sodium, xml, xmlreader, xmlwriter and zip.
+
+Supported versions Wolfi doesn't package (currently etcd 3.5/3.7, haproxy 2.6/2.8/3.0, rabbitmq 4.4 and valkey 7.2/8.0) are tracked in the `stream-missing` issue. Data directories are owned by `65532` with GID 0 and group write (except etcd's, which etcd requires to be `0700`), so they also work with an arbitrary UID.
 
 The current streams and their status are in [`generated/catalog.json`](generated/catalog.json).
 

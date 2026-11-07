@@ -1,0 +1,16 @@
+# curl. Not on endoflife.date: builds Wolfi's curl, tagged with its minor
+# version (e.g. 8.23); the previous minor's tags freeze when it moves on.
+package: curl
+description: curl {stream}
+
+variants:
+  "":
+    packages:
+      - curl
+    entrypoint: /usr/bin/curl
+  dev:
+    packages:
+      - curl
+      - wolfi-base
+      - bash
+    entrypoint: /usr/bin/curl

@@ -19,7 +19,7 @@ Working notes. Update as items land.
    - Create `curantes/wolfi-images`, push, create the GitHub App (`vars.BOT_APP_ID`, `secrets.BOT_APP_PRIVATE_KEY`).
    - Ruleset on `main`: PRs only, no force-push or deletion, required `Build Result`.
    - First manual `build.yml` run; set GHCR package visibility; check `cosign verify` and `gh attestation verify` from outside CI.
-2. **Remaining images**: `static`, `glibc-dynamic`, go, nodejs, openjdk, php, rust, etcd, valkey, curl, git, rabbitmq, coredns, haproxy, nginx. Check each product's endoflife.date slug against its Wolfi package naming; add a variant (e.g. `-jre`, `-fpm`) only where the runtime really differs.
+2. **All 18 images are defined** (72 builds). Container tests for everything but python have only run in CI. Watch the first runs of the service images (rabbitmq startup, nginx and php-fpm as an arbitrary UID). A full daily run is now 72 builds; if it gets slow, rescan published digests instead of rebuilding unchanged locks.
 3. **Kyverno policy**: signer identity, provenance and VSA; warn on `status: deprecated`, deny new admissions of frozen streams. Test in kind (positive and negative cases).
 4. **harden-runner block mode.** All jobs run `egress-policy: audit`. Collect the endpoints from a few runs, then switch to `block` with per-job allowlists.
 5. **Comparison table** with hummingbird-mirror (CVE counts, size, stream coverage) in both READMEs.

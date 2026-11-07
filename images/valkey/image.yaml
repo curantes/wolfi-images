@@ -1,0 +1,29 @@
+# Valkey server and CLI on port 6379, data in /data. Without a configuration
+# protected mode refuses remote clients until a password is set.
+endoflife: valkey
+package: valkey-{stream}
+description: Valkey {stream}
+
+common: &common
+  entrypoint: /usr/bin/valkey-server
+  work-dir: /data
+  paths:
+    - path: /data
+      type: directory
+      uid: 65532
+      gid: 0                # group-writable for arbitrary UIDs (GID 0)
+      permissions: 0o770
+
+variants:
+  "":
+    <<: *common
+    packages:
+      - valkey-{stream}
+      - valkey-{stream}-cli
+  dev:
+    <<: *common
+    packages:
+      - valkey-{stream}
+      - valkey-{stream}-cli
+      - wolfi-base
+      - bash

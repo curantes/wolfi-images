@@ -66,3 +66,19 @@ image_file() {
   "$ENGINE" cp "$cid:$1" - | tar -xOf -
   "$ENGINE" rm "$cid" > /dev/null
 }
+
+# start_server [docker run args...]: start the image detached; prints the ID.
+start_server() { "$ENGINE" run -d "$@"; }
+
+# wait_for_log CID PATTERN [SECONDS]: wait until the container logs PATTERN.
+wait_for_log() {
+  local cid="$1" pattern="$2" timeout="${3:-30}"
+  for _ in $(seq 1 "$timeout"); do
+    "$ENGINE" logs "$cid" 2>&1 | grep -qE "$pattern" && return 0
+    [ "$("$ENGINE" inspect -f '{{.State.Running}}' "$cid")" = true ] || break
+    sleep 1
+  done
+  echo "--- container logs ---" >&2
+  "$ENGINE" logs "$cid" >&2 2>&1 || true
+  return 1
+}
