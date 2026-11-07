@@ -1,0 +1,56 @@
+# PHP with common extensions. `?` marks packages that only some streams have
+# (PHP 8.5 has opcache built in).
+endoflife: php
+package: php-{stream}
+description: PHP {stream}
+
+extensions: &extensions
+  - php-{stream}-bcmath
+  - php-{stream}-ctype
+  - php-{stream}-curl
+  - php-{stream}-dom
+  - php-{stream}-fileinfo
+  - php-{stream}-iconv
+  - php-{stream}-intl
+  - php-{stream}-mbstring
+  - php-{stream}-mysqlnd
+  - "?php-{stream}-opcache"
+  - php-{stream}-openssl
+  - php-{stream}-pdo
+  - php-{stream}-pdo_mysql
+  - php-{stream}-pdo_pgsql
+  - php-{stream}-pdo_sqlite
+  - php-{stream}-posix
+  - php-{stream}-simplexml
+  - php-{stream}-sodium
+  - php-{stream}-xml
+  - php-{stream}-xmlreader
+  - php-{stream}-xmlwriter
+  - php-{stream}-zip
+
+variants:
+  # Distroless CLI
+  "":
+    packages:
+      - php-{stream}
+      - *extensions
+    entrypoint: /usr/bin/php
+  # Distroless PHP-FPM on port 9000 (Wolfi's zz-apko.conf), logging to stderr
+  fpm:
+    packages:
+      - php-{stream}-fpm
+      - *extensions
+    version-package: php-{stream}-fpm
+    entrypoint: /usr/bin/php-fpm
+    cmd: --nodaemonize
+  # CLI plus Composer, git, a shell and apk
+  dev:
+    packages:
+      - php-{stream}
+      - *extensions
+      - php-{stream}-phar
+      - composer
+      - git
+      - wolfi-base
+      - bash
+    entrypoint: /usr/bin/php

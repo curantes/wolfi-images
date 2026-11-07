@@ -1,0 +1,17 @@
+# CoreDNS. Not on endoflife.date: builds Wolfi's newest coredns-<minor>.
+# Without a Corefile it answers `whoami` on port 53, which needs unprivileged
+# low ports (Docker's default; Podman: --sysctl net.ipv4.ip_unprivileged_port_start=0).
+package: coredns-{stream}
+description: CoreDNS {stream}
+
+variants:
+  "":
+    packages:
+      - coredns-{stream}
+    entrypoint: /usr/bin/coredns
+  dev:
+    packages:
+      - coredns-{stream}
+      - wolfi-base
+      - bash
+    entrypoint: /usr/bin/coredns

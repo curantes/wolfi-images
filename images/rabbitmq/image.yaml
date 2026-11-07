@@ -1,0 +1,33 @@
+# RabbitMQ broker and CLI tools. Exception to the distroless rule: the server
+# and CLI are shell scripts and Wolfi's package depends on busybox, so the
+# default variant ships sh (tests/rabbitmq checks this explicitly).
+# AMQP on 5672, data in /var/lib/rabbitmq.
+endoflife: rabbitmq
+package: rabbitmq-server-{stream}
+description: RabbitMQ {stream}
+
+common: &common
+  entrypoint: /usr/bin/rabbitmq-server
+  environment:
+    HOME: /var/lib/rabbitmq                       # Erlang cookie
+    RABBITMQ_MNESIA_BASE: /var/lib/rabbitmq/mnesia
+    RABBITMQ_ENABLED_PLUGINS_FILE: /var/lib/rabbitmq/enabled_plugins
+    RABBITMQ_LOGS: "-"
+  paths:
+    - path: /var/lib/rabbitmq
+      type: directory
+      uid: 65532
+      gid: 0                # group-writable for arbitrary UIDs (GID 0)
+      permissions: 0o770
+
+variants:
+  "":
+    <<: *common
+    packages:
+      - rabbitmq-server-{stream}
+  dev:
+    <<: *common
+    packages:
+      - rabbitmq-server-{stream}
+      - wolfi-base
+      - bash

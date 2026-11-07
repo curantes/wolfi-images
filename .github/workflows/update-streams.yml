@@ -75,18 +75,18 @@ jobs:
             | "- `\($n):\(.key)`: \(.value | join(", "))"' generated/catalog.json)"
           ISSUE="$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')"
           if [ -z "$MISSING" ]; then
-            [ -z "$ISSUE" ] || gh issue close "$ISSUE" --comment "Every supported stream is packaged in Wolfi now."
+            [ -z "$ISSUE" ] || gh issue close "$ISSUE" --comment "Every supported stream is packaged and maintained in Wolfi now."
             exit 0
           fi
-          BODY="These streams are supported according to endoflife.date but Wolfi doesn't package them (on every architecture), so they aren't built:
+          BODY="These streams are supported according to endoflife.date but aren't built: Wolfi doesn't package them on every architecture, or public Wolfi no longer maintains them (its security database lists fixes it doesn't publish, or the newest build is older than the limit):
 
           $MISSING
 
-          Options: wait for Wolfi, or build the package with melange (see ROADMAP)."
+          Options: wait for Wolfi, use hummingbird-mirror where Red Hat ships the stream, or build the package with melange (see ROADMAP)."
           if [ -n "$ISSUE" ]; then
             gh issue edit "$ISSUE" --body "$BODY"
           else
-            gh label create "$LABEL" --color FBCA04 --description "Supported stream not packaged in Wolfi" --force
+            gh label create "$LABEL" --color FBCA04 --description "Supported stream not packaged or maintained in Wolfi" --force
             gh issue create --title "Supported streams missing from Wolfi" --label "$LABEL" --body "$BODY"
           fi
 

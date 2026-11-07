@@ -15,11 +15,8 @@ Working notes. Update as items land.
 
 ## Next
 
-1. **Bring up the repo on GitHub.**
-   - Create `curantes/wolfi-images`, push, create the GitHub App (`vars.BOT_APP_ID`, `secrets.BOT_APP_PRIVATE_KEY`).
-   - Ruleset on `main`: PRs only, no force-push or deletion, required `Build Result`.
-   - First manual `build.yml` run; set GHCR package visibility; check `cosign verify` and `gh attestation verify` from outside CI.
-2. **Remaining images**: `static`, `glibc-dynamic`, go, nodejs, openjdk, php, rust, etcd, valkey, curl, git, rabbitmq, coredns, haproxy, nginx. Check each product's endoflife.date slug against its Wolfi package naming; add a variant (e.g. `-jre`, `-fpm`) only where the runtime really differs.
+1. **Repo on GitHub is live** (2026-11-07): ruleset on `main`, bot GitHub App, Renovate, public GHCR packages. Still to do: run `cosign verify` and `gh attestation verify` from outside CI, and watch the first automerged lock refresh PR.
+2. **All 18 images are defined; 54 builds are maintained.** Public Wolfi maintains no stream of coredns, etcd or rabbitmq and only the newest of haproxy, nginx and valkey (see the `stream-missing` issue). For those, decide per stream: hummingbird-mirror where Red Hat ships it, melange, or wait. Watch the first CI runs of the service images (nginx as an arbitrary UID).
 3. **Kyverno policy in a cluster.** `policy/verify-wolfi-images.yaml` passes `policy/test.sh` (Kyverno CLI 1.19.2, live registry and Rekor). Still to do: run it in kind, and decide whether to migrate to `ImageValidatingPolicy`/`ValidatingPolicy` (CEL), since Kyverno 1.19 deprecates `ClusterPolicy`.
 4. **harden-runner block mode.** All jobs run `egress-policy: audit`. Collect the endpoints from a few runs, then switch to `block` with per-job allowlists.
 5. **Comparison table** with hummingbird-mirror (CVE counts, size, stream coverage) in both READMEs.
@@ -34,6 +31,7 @@ Working notes. Update as items land.
 
 ## Lessons Learned
 
+- **Public Wolfi only maintains the newest stream of many products.** Older streams (nodejs-22, etcd-3.6, haproxy-3.2/3.3, nginx-stable, valkey-9.0, ...) stopped getting builds months ago while Wolfi's security database kept recording fixes for versions that were never published. The generator now requires a stream to be maintained (no unpublished fix, newest build at most 90 days old).
 - **Signing and attesting depend on Rekor**, which has transient outages: a single 500 failed the publish of three streams. `cosign` calls retry with backoff, and the attestation actions get a second attempt.
 - **apko embeds the git commit** (`org.opencontainers.image.revision`) unless built with `--vcs=false`, so every commit changed every digest.
 - **apko's release binaries are only verifiable through a Rekor log search** (`.sig`/`.crt`, no bundle), so verifying them made every build fail while Rekor's v1 search API returned 500s. Run apko from its container image pinned by digest instead.

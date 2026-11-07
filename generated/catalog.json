@@ -1,11 +1,185 @@
 {
   "images": {
+    "coredns": {
+      "endoflife": null,
+      "streams": {},
+      "missing": {
+        "1.14": [
+          "unmaintained: Wolfi lists fixes up to 1.14.7-r8 but publishes 1.14.3-r5 (x86_64)",
+          "unmaintained: newest coredns-1.14 build is 152 days old (limit 90)"
+        ]
+      }
+    },
+    "curl": {
+      "endoflife": null,
+      "streams": {
+        "8.23": {
+          "status": "supported",
+          "eol": null
+        }
+      },
+      "missing": {}
+    },
+    "etcd": {
+      "endoflife": "etcd",
+      "streams": {},
+      "missing": {
+        "3.7": [
+          "no etcd-3.7"
+        ],
+        "3.6": [
+          "unmaintained: Wolfi lists fixes up to 3.6.16-r2 but publishes 3.6.12-r1 (x86_64)",
+          "unmaintained: newest etcd-3.6 build is 157 days old (limit 90)"
+        ],
+        "3.5": [
+          "no etcd-3.5"
+        ]
+      }
+    },
+    "git": {
+      "endoflife": "git",
+      "streams": {
+        "2.56": {
+          "status": "supported",
+          "eol": null
+        }
+      },
+      "missing": {}
+    },
     "glibc-dynamic": {
       "endoflife": null,
       "streams": {
         "latest": {
           "status": "supported",
           "eol": null
+        }
+      },
+      "missing": {}
+    },
+    "go": {
+      "endoflife": "go",
+      "streams": {
+        "1.27": {
+          "status": "supported",
+          "eol": null
+        },
+        "1.26": {
+          "status": "supported",
+          "eol": null
+        }
+      },
+      "missing": {}
+    },
+    "haproxy": {
+      "endoflife": "haproxy",
+      "streams": {
+        "3.4": {
+          "status": "supported",
+          "eol": "2031-04-01"
+        }
+      },
+      "missing": {
+        "3.3": [
+          "unmaintained: Wolfi lists fixes up to 3.3.11-r0 but publishes 3.3.10-r0 (x86_64)",
+          "unmaintained: newest haproxy-3.3 build is 180 days old (limit 90)"
+        ],
+        "3.2": [
+          "unmaintained: Wolfi lists fixes up to 3.2.20-r0 but publishes 3.2.9-r0 (x86_64)",
+          "unmaintained: newest haproxy-3.2 build is 351 days old (limit 90)"
+        ],
+        "3.0": [
+          "no haproxy-3.0"
+        ],
+        "2.8": [
+          "no haproxy-2.8"
+        ],
+        "2.6": [
+          "no haproxy-2.6"
+        ]
+      }
+    },
+    "nginx": {
+      "endoflife": "nginx",
+      "streams": {
+        "1.31": {
+          "status": "supported",
+          "eol": null
+        }
+      },
+      "missing": {
+        "1.30": [
+          "unmaintained: Wolfi lists fixes up to 1.30.6-r0 but publishes 1.30.2-r0 (x86_64)",
+          "unmaintained: newest nginx-stable build is 165 days old (limit 90)"
+        ]
+      }
+    },
+    "nodejs": {
+      "endoflife": "nodejs",
+      "streams": {
+        "26": {
+          "status": "supported",
+          "eol": "2029-04-30"
+        },
+        "24": {
+          "status": "supported",
+          "eol": "2028-04-30"
+        }
+      },
+      "missing": {
+        "22": [
+          "unmaintained: Wolfi lists fixes up to 22.23.4-r0 but publishes 22.23.2-r1 (x86_64)",
+          "unmaintained: newest nodejs-22 build is 92 days old (limit 90)"
+        ]
+      }
+    },
+    "openjdk": {
+      "endoflife": "eclipse-temurin",
+      "streams": {
+        "27": {
+          "status": "supported",
+          "eol": "2027-03-23"
+        },
+        "25": {
+          "status": "supported",
+          "eol": "2031-09-30"
+        },
+        "21": {
+          "status": "supported",
+          "eol": "2029-12-31"
+        },
+        "17": {
+          "status": "supported",
+          "eol": "2027-10-31"
+        },
+        "11": {
+          "status": "supported",
+          "eol": "2027-10-31"
+        },
+        "8": {
+          "status": "supported",
+          "eol": "2030-12-31"
+        }
+      },
+      "missing": {}
+    },
+    "php": {
+      "endoflife": "php",
+      "streams": {
+        "8.5": {
+          "status": "supported",
+          "eol": "2029-12-31"
+        },
+        "8.4": {
+          "status": "supported",
+          "eol": "2028-12-31"
+        },
+        "8.3": {
+          "status": "supported",
+          "eol": "2027-12-31"
+        },
+        "8.2": {
+          "status": "supported",
+          "eol": "2026-12-31"
         }
       },
       "missing": {}
@@ -36,6 +210,28 @@
       },
       "missing": {}
     },
+    "rabbitmq": {
+      "endoflife": "rabbitmq",
+      "streams": {},
+      "missing": {
+        "4.4": [
+          "no rabbitmq-server-4.4"
+        ],
+        "4.3": [
+          "unmaintained: newest rabbitmq-server-4.3 build is 169 days old (limit 90)"
+        ]
+      }
+    },
+    "rust": {
+      "endoflife": "rust",
+      "streams": {
+        "1.99": {
+          "status": "supported",
+          "eol": null
+        }
+      },
+      "missing": {}
+    },
     "static": {
       "endoflife": null,
       "streams": {
@@ -45,9 +241,76 @@
         }
       },
       "missing": {}
+    },
+    "valkey": {
+      "endoflife": "valkey",
+      "streams": {
+        "9.1": {
+          "status": "supported",
+          "eol": "2031-05-19"
+        }
+      },
+      "missing": {
+        "9.0": [
+          "unmaintained: newest valkey-9.0 build is 185 days old (limit 90)"
+        ],
+        "8.1": [
+          "unmaintained: newest valkey-8.1 build is 400 days old (limit 90)"
+        ],
+        "8.0": [
+          "no valkey-8.0"
+        ],
+        "7.2": [
+          "no valkey-7.2"
+        ]
+      }
     }
   },
   "builds": [
+    {
+      "name": "curl",
+      "tag": "8.23",
+      "stream": "8.23",
+      "variant": "",
+      "package": "curl",
+      "status": "supported",
+      "eol": null,
+      "config": "generated/curl/8.23.apko.yaml",
+      "lock": "generated/curl/8.23.lock.json"
+    },
+    {
+      "name": "curl",
+      "tag": "8.23-dev",
+      "stream": "8.23",
+      "variant": "dev",
+      "package": "curl",
+      "status": "supported",
+      "eol": null,
+      "config": "generated/curl/8.23-dev.apko.yaml",
+      "lock": "generated/curl/8.23-dev.lock.json"
+    },
+    {
+      "name": "git",
+      "tag": "2.56",
+      "stream": "2.56",
+      "variant": "",
+      "package": "git",
+      "status": "supported",
+      "eol": null,
+      "config": "generated/git/2.56.apko.yaml",
+      "lock": "generated/git/2.56.lock.json"
+    },
+    {
+      "name": "git",
+      "tag": "2.56-dev",
+      "stream": "2.56",
+      "variant": "dev",
+      "package": "git",
+      "status": "supported",
+      "eol": null,
+      "config": "generated/git/2.56-dev.apko.yaml",
+      "lock": "generated/git/2.56-dev.lock.json"
+    },
     {
       "name": "glibc-dynamic",
       "tag": "latest",
@@ -69,6 +332,380 @@
       "eol": null,
       "config": "generated/glibc-dynamic/latest-dev.apko.yaml",
       "lock": "generated/glibc-dynamic/latest-dev.lock.json"
+    },
+    {
+      "name": "go",
+      "tag": "1.27-dev",
+      "stream": "1.27",
+      "variant": "dev",
+      "package": "go-1.27",
+      "status": "supported",
+      "eol": null,
+      "config": "generated/go/1.27-dev.apko.yaml",
+      "lock": "generated/go/1.27-dev.lock.json"
+    },
+    {
+      "name": "go",
+      "tag": "1.26-dev",
+      "stream": "1.26",
+      "variant": "dev",
+      "package": "go-1.26",
+      "status": "supported",
+      "eol": null,
+      "config": "generated/go/1.26-dev.apko.yaml",
+      "lock": "generated/go/1.26-dev.lock.json"
+    },
+    {
+      "name": "haproxy",
+      "tag": "3.4",
+      "stream": "3.4",
+      "variant": "",
+      "package": "haproxy-3.4",
+      "status": "supported",
+      "eol": "2031-04-01",
+      "config": "generated/haproxy/3.4.apko.yaml",
+      "lock": "generated/haproxy/3.4.lock.json"
+    },
+    {
+      "name": "haproxy",
+      "tag": "3.4-dev",
+      "stream": "3.4",
+      "variant": "dev",
+      "package": "haproxy-3.4",
+      "status": "supported",
+      "eol": "2031-04-01",
+      "config": "generated/haproxy/3.4-dev.apko.yaml",
+      "lock": "generated/haproxy/3.4-dev.lock.json"
+    },
+    {
+      "name": "nginx",
+      "tag": "1.31",
+      "stream": "1.31",
+      "variant": "",
+      "package": "nginx-mainline",
+      "status": "supported",
+      "eol": null,
+      "config": "generated/nginx/1.31.apko.yaml",
+      "lock": "generated/nginx/1.31.lock.json"
+    },
+    {
+      "name": "nginx",
+      "tag": "1.31-dev",
+      "stream": "1.31",
+      "variant": "dev",
+      "package": "nginx-mainline",
+      "status": "supported",
+      "eol": null,
+      "config": "generated/nginx/1.31-dev.apko.yaml",
+      "lock": "generated/nginx/1.31-dev.lock.json"
+    },
+    {
+      "name": "nodejs",
+      "tag": "26",
+      "stream": "26",
+      "variant": "",
+      "package": "nodejs-26",
+      "status": "supported",
+      "eol": "2029-04-30",
+      "config": "generated/nodejs/26.apko.yaml",
+      "lock": "generated/nodejs/26.lock.json"
+    },
+    {
+      "name": "nodejs",
+      "tag": "26-dev",
+      "stream": "26",
+      "variant": "dev",
+      "package": "nodejs-26",
+      "status": "supported",
+      "eol": "2029-04-30",
+      "config": "generated/nodejs/26-dev.apko.yaml",
+      "lock": "generated/nodejs/26-dev.lock.json"
+    },
+    {
+      "name": "nodejs",
+      "tag": "24",
+      "stream": "24",
+      "variant": "",
+      "package": "nodejs-24",
+      "status": "supported",
+      "eol": "2028-04-30",
+      "config": "generated/nodejs/24.apko.yaml",
+      "lock": "generated/nodejs/24.lock.json"
+    },
+    {
+      "name": "nodejs",
+      "tag": "24-dev",
+      "stream": "24",
+      "variant": "dev",
+      "package": "nodejs-24",
+      "status": "supported",
+      "eol": "2028-04-30",
+      "config": "generated/nodejs/24-dev.apko.yaml",
+      "lock": "generated/nodejs/24-dev.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "27",
+      "stream": "27",
+      "variant": "",
+      "package": "openjdk-27-jre",
+      "status": "supported",
+      "eol": "2027-03-23",
+      "config": "generated/openjdk/27.apko.yaml",
+      "lock": "generated/openjdk/27.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "27-dev",
+      "stream": "27",
+      "variant": "dev",
+      "package": "openjdk-27",
+      "status": "supported",
+      "eol": "2027-03-23",
+      "config": "generated/openjdk/27-dev.apko.yaml",
+      "lock": "generated/openjdk/27-dev.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "25",
+      "stream": "25",
+      "variant": "",
+      "package": "openjdk-25-jre",
+      "status": "supported",
+      "eol": "2031-09-30",
+      "config": "generated/openjdk/25.apko.yaml",
+      "lock": "generated/openjdk/25.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "25-dev",
+      "stream": "25",
+      "variant": "dev",
+      "package": "openjdk-25",
+      "status": "supported",
+      "eol": "2031-09-30",
+      "config": "generated/openjdk/25-dev.apko.yaml",
+      "lock": "generated/openjdk/25-dev.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "21",
+      "stream": "21",
+      "variant": "",
+      "package": "openjdk-21-jre",
+      "status": "supported",
+      "eol": "2029-12-31",
+      "config": "generated/openjdk/21.apko.yaml",
+      "lock": "generated/openjdk/21.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "21-dev",
+      "stream": "21",
+      "variant": "dev",
+      "package": "openjdk-21",
+      "status": "supported",
+      "eol": "2029-12-31",
+      "config": "generated/openjdk/21-dev.apko.yaml",
+      "lock": "generated/openjdk/21-dev.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "17",
+      "stream": "17",
+      "variant": "",
+      "package": "openjdk-17-jre",
+      "status": "supported",
+      "eol": "2027-10-31",
+      "config": "generated/openjdk/17.apko.yaml",
+      "lock": "generated/openjdk/17.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "17-dev",
+      "stream": "17",
+      "variant": "dev",
+      "package": "openjdk-17",
+      "status": "supported",
+      "eol": "2027-10-31",
+      "config": "generated/openjdk/17-dev.apko.yaml",
+      "lock": "generated/openjdk/17-dev.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "11",
+      "stream": "11",
+      "variant": "",
+      "package": "openjdk-11-jre",
+      "status": "supported",
+      "eol": "2027-10-31",
+      "config": "generated/openjdk/11.apko.yaml",
+      "lock": "generated/openjdk/11.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "11-dev",
+      "stream": "11",
+      "variant": "dev",
+      "package": "openjdk-11",
+      "status": "supported",
+      "eol": "2027-10-31",
+      "config": "generated/openjdk/11-dev.apko.yaml",
+      "lock": "generated/openjdk/11-dev.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "8",
+      "stream": "8",
+      "variant": "",
+      "package": "openjdk-8-jre",
+      "status": "supported",
+      "eol": "2030-12-31",
+      "config": "generated/openjdk/8.apko.yaml",
+      "lock": "generated/openjdk/8.lock.json"
+    },
+    {
+      "name": "openjdk",
+      "tag": "8-dev",
+      "stream": "8",
+      "variant": "dev",
+      "package": "openjdk-8",
+      "status": "supported",
+      "eol": "2030-12-31",
+      "config": "generated/openjdk/8-dev.apko.yaml",
+      "lock": "generated/openjdk/8-dev.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.5",
+      "stream": "8.5",
+      "variant": "",
+      "package": "php-8.5",
+      "status": "supported",
+      "eol": "2029-12-31",
+      "config": "generated/php/8.5.apko.yaml",
+      "lock": "generated/php/8.5.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.5-fpm",
+      "stream": "8.5",
+      "variant": "fpm",
+      "package": "php-8.5-fpm",
+      "status": "supported",
+      "eol": "2029-12-31",
+      "config": "generated/php/8.5-fpm.apko.yaml",
+      "lock": "generated/php/8.5-fpm.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.5-dev",
+      "stream": "8.5",
+      "variant": "dev",
+      "package": "php-8.5",
+      "status": "supported",
+      "eol": "2029-12-31",
+      "config": "generated/php/8.5-dev.apko.yaml",
+      "lock": "generated/php/8.5-dev.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.4",
+      "stream": "8.4",
+      "variant": "",
+      "package": "php-8.4",
+      "status": "supported",
+      "eol": "2028-12-31",
+      "config": "generated/php/8.4.apko.yaml",
+      "lock": "generated/php/8.4.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.4-fpm",
+      "stream": "8.4",
+      "variant": "fpm",
+      "package": "php-8.4-fpm",
+      "status": "supported",
+      "eol": "2028-12-31",
+      "config": "generated/php/8.4-fpm.apko.yaml",
+      "lock": "generated/php/8.4-fpm.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.4-dev",
+      "stream": "8.4",
+      "variant": "dev",
+      "package": "php-8.4",
+      "status": "supported",
+      "eol": "2028-12-31",
+      "config": "generated/php/8.4-dev.apko.yaml",
+      "lock": "generated/php/8.4-dev.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.3",
+      "stream": "8.3",
+      "variant": "",
+      "package": "php-8.3",
+      "status": "supported",
+      "eol": "2027-12-31",
+      "config": "generated/php/8.3.apko.yaml",
+      "lock": "generated/php/8.3.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.3-fpm",
+      "stream": "8.3",
+      "variant": "fpm",
+      "package": "php-8.3-fpm",
+      "status": "supported",
+      "eol": "2027-12-31",
+      "config": "generated/php/8.3-fpm.apko.yaml",
+      "lock": "generated/php/8.3-fpm.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.3-dev",
+      "stream": "8.3",
+      "variant": "dev",
+      "package": "php-8.3",
+      "status": "supported",
+      "eol": "2027-12-31",
+      "config": "generated/php/8.3-dev.apko.yaml",
+      "lock": "generated/php/8.3-dev.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.2",
+      "stream": "8.2",
+      "variant": "",
+      "package": "php-8.2",
+      "status": "supported",
+      "eol": "2026-12-31",
+      "config": "generated/php/8.2.apko.yaml",
+      "lock": "generated/php/8.2.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.2-fpm",
+      "stream": "8.2",
+      "variant": "fpm",
+      "package": "php-8.2-fpm",
+      "status": "supported",
+      "eol": "2026-12-31",
+      "config": "generated/php/8.2-fpm.apko.yaml",
+      "lock": "generated/php/8.2-fpm.lock.json"
+    },
+    {
+      "name": "php",
+      "tag": "8.2-dev",
+      "stream": "8.2",
+      "variant": "dev",
+      "package": "php-8.2",
+      "status": "supported",
+      "eol": "2026-12-31",
+      "config": "generated/php/8.2-dev.apko.yaml",
+      "lock": "generated/php/8.2-dev.lock.json"
     },
     {
       "name": "python",
@@ -181,6 +818,17 @@
       "lock": "generated/python/3.11-dev.lock.json"
     },
     {
+      "name": "rust",
+      "tag": "1.99-dev",
+      "stream": "1.99",
+      "variant": "dev",
+      "package": "rust-1.99",
+      "status": "supported",
+      "eol": null,
+      "config": "generated/rust/1.99-dev.apko.yaml",
+      "lock": "generated/rust/1.99-dev.lock.json"
+    },
+    {
       "name": "static",
       "tag": "latest",
       "stream": "latest",
@@ -190,6 +838,28 @@
       "eol": null,
       "config": "generated/static/latest.apko.yaml",
       "lock": "generated/static/latest.lock.json"
+    },
+    {
+      "name": "valkey",
+      "tag": "9.1",
+      "stream": "9.1",
+      "variant": "",
+      "package": "valkey-9.1",
+      "status": "supported",
+      "eol": "2031-05-19",
+      "config": "generated/valkey/9.1.apko.yaml",
+      "lock": "generated/valkey/9.1.lock.json"
+    },
+    {
+      "name": "valkey",
+      "tag": "9.1-dev",
+      "stream": "9.1",
+      "variant": "dev",
+      "package": "valkey-9.1",
+      "status": "supported",
+      "eol": "2031-05-19",
+      "config": "generated/valkey/9.1-dev.apko.yaml",
+      "lock": "generated/valkey/9.1-dev.lock.json"
     }
   ]
 }
