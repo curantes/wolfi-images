@@ -1,0 +1,132 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-wolfi-images
+  annotations:
+    policies.kyverno.io/title: Verify Wolfi Images
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/minversion: 1.13.0
+    policies.kyverno.io/description: >-
+      Admits images from ghcr.io/curantes/wolfi-images/* only when they carry
+      SLSA build provenance and a passing verification summary (VSA), both
+      signed by the build-image workflow on main, and pins them by digest.
+      Warns for streams past their end of life and blocks new Pods using a
+      stream more than 30 days past it (frozen streams are no longer rebuilt).
+spec:
+  background: true
+  # Surface Audit-rule violations (deprecated streams) as admission warnings.
+  emitWarning: true
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-provenance-and-approval
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        # Attestations are Sigstore bundles stored as OCI referrers.
+        - imageReferences:
+            - "ghcr.io/curantes/wolfi-images/*"
+          type: SigstoreBundle
+          failureAction: Enforce
+          mutateDigest: true
+          verifyDigest: true
+          required: true
+          attestations:
+            - predicateType: https://slsa.dev/provenance/v1
+              attestors:
+                - entries:
+                    - keyless:
+                        issuer: https://token.actions.githubusercontent.com
+                        subject: "https://github.com/curantes/wolfi-images/.github/workflows/build-image.yml@refs/heads/main"
+                        rekor:
+                          url: https://rekor.sigstore.dev
+            - predicateType: https://slsa.dev/verification_summary/v1
+              attestors:
+                - entries:
+                    - keyless:
+                        issuer: https://token.actions.githubusercontent.com
+                        subject: "https://github.com/curantes/wolfi-images/.github/workflows/build-image.yml@refs/heads/main"
+                        rekor:
+                          url: https://rekor.sigstore.dev
+              conditions:
+                - all:
+                    - key: "{{ verificationResult }}"
+                      operator: Equals
+                      value: PASSED
+
+    # Every image carries its stream's EOL date as the label
+    # io.github.curantes.wolfi-images.eol (YYYY-MM-DD). Deciding from the date
+    # rather than the status label also covers images built before their EOL.
+    - name: warn-deprecated-streams
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        failureAction: Audit
+        message: >-
+          A wolfi-images stream used by this Pod is past its end of life. It is
+          still rebuilt for 30 days after that date, then frozen and blocked for
+          new Pods. Move to a supported stream (see the image's
+          io.github.curantes.wolfi-images.eol label).
+        foreach:
+          - list: "request.object.spec.[ephemeralContainers, initContainers, containers][]"
+            preconditions:
+              all:
+                - key: "{{ element.image }}"
+                  operator: Equals
+                  value: "ghcr.io/curantes/wolfi-images/*"
+            context:
+              - name: eol
+                imageRegistry:
+                  reference: "{{ element.image }}"
+                  jmesPath: "configData.config.Labels.\"io.github.curantes.wolfi-images.eol\" || ''"
+            deny:
+              conditions:
+                all:
+                  - key: "{{ eol }}"
+                    operator: NotEquals
+                    value: ""
+                  - key: "{{ time_after(time_now_utc(), '{{ eol }}T00:00:00Z') }}"
+                    operator: Equals
+                    value: true
+
+    - name: block-frozen-streams
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+      validate:
+        failureAction: Enforce
+        message: >-
+          A wolfi-images stream used by this Pod is frozen: it reached end of
+          life more than 30 days ago and is no longer rebuilt or patched. Move
+          to a supported stream.
+        foreach:
+          - list: "request.object.spec.[ephemeralContainers, initContainers, containers][]"
+            preconditions:
+              all:
+                - key: "{{ element.image }}"
+                  operator: Equals
+                  value: "ghcr.io/curantes/wolfi-images/*"
+            context:
+              - name: eol
+                imageRegistry:
+                  reference: "{{ element.image }}"
+                  jmesPath: "configData.config.Labels.\"io.github.curantes.wolfi-images.eol\" || ''"
+            deny:
+              conditions:
+                all:
+                  - key: "{{ eol }}"
+                    operator: NotEquals
+                    value: ""
+                  # Grace period: 30 days (scripts/generate.py GRACE_DAYS)
+                  - key: "{{ time_after(time_now_utc(), time_add('{{ eol }}T00:00:00Z', '720h')) }}"
+                    operator: Equals
+                    value: true

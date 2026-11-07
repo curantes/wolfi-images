@@ -20,7 +20,7 @@ Working notes. Update as items land.
    - Ruleset on `main`: PRs only, no force-push or deletion, required `Build Result`.
    - First manual `build.yml` run; set GHCR package visibility; check `cosign verify` and `gh attestation verify` from outside CI.
 2. **Remaining images**: `static`, `glibc-dynamic`, go, nodejs, openjdk, php, rust, etcd, valkey, curl, git, rabbitmq, coredns, haproxy, nginx. Check each product's endoflife.date slug against its Wolfi package naming; add a variant (e.g. `-jre`, `-fpm`) only where the runtime really differs.
-3. **Kyverno policy**: signer identity, provenance and VSA; warn on `status: deprecated`, deny new admissions of frozen streams. Test in kind (positive and negative cases).
+3. **Kyverno policy in a cluster.** `policy/verify-wolfi-images.yaml` passes `policy/test.sh` (Kyverno CLI 1.19.2, live registry and Rekor). Still to do: run it in kind, and decide whether to migrate to `ImageValidatingPolicy`/`ValidatingPolicy` (CEL), since Kyverno 1.19 deprecates `ClusterPolicy`.
 4. **harden-runner block mode.** All jobs run `egress-policy: audit`. Collect the endpoints from a few runs, then switch to `block` with per-job allowlists.
 5. **Comparison table** with hummingbird-mirror (CVE counts, size, stream coverage) in both READMEs.
 6. **Generator tests** with offline fixtures (`--offline`), run in CI.
@@ -35,6 +35,7 @@ Working notes. Update as items land.
 ## Lessons Learned
 
 - **apko embeds the git commit** (`org.opencontainers.image.revision`) unless built with `--vcs=false`, so every commit changed every digest.
+- **The Kyverno CLI skips `imageRegistry` context lookups unless run with `--registry`**, and a rule `message` can't use `foreach` variables.
 - **Free Chainguard images only publish `latest`/`latest-dev`**, so version streams mean building with apko.
 - **apko's tarball output is docker-loadable** and its `index.json` *is* the image index. Writing to a directory path fails ("is a directory"), so convert the tarball (`scripts/oci_layout.py`) to push by digest with `regctl`.
 - **Wolfi uses a merged `/usr`**: `/bin` and `/sbin` are symlinks to `/usr/bin`.
