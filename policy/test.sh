@@ -8,6 +8,8 @@
 #    (warn only) and frozen (blocked).
 #
 # Usage: policy/test.sh [image]   (needs kyverno, curl, jq, python3 with PyYAML)
+# The images are private: Kyverno uses the Docker config's credentials
+# (docker login ghcr.io), and the label lookup uses GITHUB_TOKEN.
 set -euo pipefail
 cd "$(dirname "$0")"
 KYVERNO="${KYVERNO:-kyverno}"
@@ -50,7 +52,9 @@ echo "Provenance and VSA..."
 
 # EOL label of the image, read the way the policy reads it
 NAME_TAG="${IMAGE#ghcr.io/}"
-TOKEN="$(curl -fsS "https://ghcr.io/token?scope=repository:${NAME_TAG%:*}:pull" | jq -r .token)"
+AUTH=()
+[ -z "${GITHUB_TOKEN:-}" ] || AUTH=(-u "token:$GITHUB_TOKEN")
+TOKEN="$(curl -fsS "${AUTH[@]}" "https://ghcr.io/token?scope=repository:${NAME_TAG%:*}:pull" | jq -r .token)"
 API="https://ghcr.io/v2/${NAME_TAG%:*}"
 MANIFEST="$(curl -fsS -H "Authorization: Bearer $TOKEN" \
   -H 'Accept: application/vnd.oci.image.index.v1+json' "$API/manifests/${NAME_TAG##*:}" | jq -r '.manifests[0].digest')"

@@ -30,6 +30,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      packages: read  # the published images are private
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -57,5 +58,13 @@ jobs:
           tar -xzf "$FILE" kyverno
           install -m 0755 kyverno /usr/local/bin/kyverno
 
+      - name: Log In to GHCR
+        env:
+          TOKEN: ${{ github.token }}
+        # Kyverno and cosign read the Docker config for registry credentials.
+        run: echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
       - name: Run Policy Tests
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: policy/test.sh
