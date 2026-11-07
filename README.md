@@ -98,6 +98,16 @@ cosign verify-attestation --type spdxjson "$IMAGE" \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
+### Admission Policy
+
+[`policy/verify-wolfi-images.yaml`](policy/verify-wolfi-images.yaml) is a Kyverno (≥ 1.13) policy for Pods using `ghcr.io/curantes/wolfi-images/*`:
+
+- **Enforce:** SLSA provenance and a `PASSED` VSA, both signed by `build-image.yml` on `main`; the image is pinned by digest (`mutateDigest`).
+- **Warn:** the stream is past its EOL date (from the image's `io.github.curantes.wolfi-images.eol` label).
+- **Block new Pods:** the stream is more than 30 days past EOL (frozen, no longer patched).
+
+[`policy/test.sh`](policy/test.sh) runs it with the Kyverno CLI against the live registry and Rekor, with "now" pinned to dates around an image's EOL; [`policy.yml`](.github/workflows/policy.yml) runs it weekly and on policy changes. It hasn't been tested in a cluster yet.
+
 ## Development
 
 ```bash
