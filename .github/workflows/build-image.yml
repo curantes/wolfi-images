@@ -297,10 +297,39 @@ jobs:
 
       - name: Sign Image
         if: steps.approval.outputs.approved == 'false'
-        run: cosign sign --yes --recursive "$IMAGE@$DIGEST"
+        run: |
+          # Signing uploads to Rekor, which has transient outages; retry
+          # with backoff rather than failing the publish on one error.
+          retry() {
+            for attempt in 1 2 3 4; do
+              "$@" && return 0
+              [ "$attempt" -lt 4 ] || { echo "Failed after 4 attempts: $*"; return 1; }
+              echo "::warning::Attempt $attempt failed; retrying: $*"
+              sleep $((attempt * 30))
+            done
+          }
+          retry cosign sign --yes --recursive "$IMAGE@$DIGEST"
 
+      # Actions can't be retried in place: a failed first attempt is followed
+      # by a pause and one more attempt, which fails the job if it fails too.
       - name: Attest Build Provenance
+        id: provenance
         if: steps.approval.outputs.approved == 'false'
+        continue-on-error: true
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ env.DIGEST }}
+          push-to-registry: true
+
+      - name: Wait Before Retrying Provenance
+        if: steps.provenance.outcome == 'failure'
+        run: |
+          echo "::warning::Provenance attestation failed; retrying in 60s"
+          sleep 60
+
+      - name: Attest Build Provenance (retry)
+        if: steps.provenance.outcome == 'failure'
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ env.IMAGE }}
@@ -312,13 +341,23 @@ jobs:
       - name: Attest SBOMs
         if: steps.approval.outputs.approved == 'false'
         run: |
-          cosign attest --yes --type spdxjson --predicate out/sbom/sbom-index.spdx.json "$IMAGE@$DIGEST"
-          tar -xOf out/image.tar index.json | jq -r '.manifests[] | "\(.platform.architecture) \(.digest)"' \
-            | while read -r arch digest; do
-                case "$arch" in amd64) apk_arch=x86_64 ;; arm64) apk_arch=aarch64 ;; esac
-                cosign attest --yes --type spdxjson \
-                  --predicate "out/sbom/sbom-$apk_arch.spdx.json" "$IMAGE@$digest"
-              done
+          # Signing uploads to Rekor, which has transient outages; retry
+          # with backoff rather than failing the publish on one error.
+          retry() {
+            for attempt in 1 2 3 4; do
+              "$@" && return 0
+              [ "$attempt" -lt 4 ] || { echo "Failed after 4 attempts: $*"; return 1; }
+              echo "::warning::Attempt $attempt failed; retrying: $*"
+              sleep $((attempt * 30))
+            done
+          }
+          retry cosign attest --yes --type spdxjson --predicate out/sbom/sbom-index.spdx.json "$IMAGE@$DIGEST"
+          tar -xOf out/image.tar index.json | jq -r '.manifests[] | "\(.platform.architecture) \(.digest)"' > platforms.txt
+          while read -r arch digest; do
+            case "$arch" in amd64) apk_arch=x86_64 ;; arm64) apk_arch=aarch64 ;; esac
+            retry cosign attest --yes --type spdxjson \
+              --predicate "out/sbom/sbom-$apk_arch.spdx.json" "$IMAGE@$digest"
+          done < platforms.txt
 
       - name: Write Verification Summary
         if: steps.approval.outputs.approved == 'false'
@@ -345,7 +384,25 @@ jobs:
           cat vsa.json
 
       - name: Attest Verification Summary (VSA)
+        id: vsa
         if: steps.approval.outputs.approved == 'false'
+        continue-on-error: true
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ env.DIGEST }}
+          predicate-type: ${{ env.VSA_PREDICATE }}
+          predicate-path: vsa.json
+          push-to-registry: true
+
+      - name: Wait Before Retrying VSA
+        if: steps.vsa.outcome == 'failure'
+        run: |
+          echo "::warning::VSA attestation failed; retrying in 60s"
+          sleep 60
+
+      - name: Attest Verification Summary (VSA, retry)
+        if: steps.vsa.outcome == 'failure'
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-name: ${{ env.IMAGE }}
