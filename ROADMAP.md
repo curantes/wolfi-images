@@ -15,11 +15,8 @@ Working notes. Update as items land.
 
 ## Next
 
-1. **Bring up the repo on GitHub.**
-   - Create `curantes/wolfi-images`, push, create the GitHub App (`vars.BOT_APP_ID`, `secrets.BOT_APP_PRIVATE_KEY`).
-   - Ruleset on `main`: PRs only, no force-push or deletion, required `Build Result`.
-   - First manual `build.yml` run; set GHCR package visibility; check `cosign verify` and `gh attestation verify` from outside CI.
-2. **All 18 images are defined** (72 builds). Container tests for everything but python have only run in CI. Watch the first runs of the service images (rabbitmq startup, nginx and php-fpm as an arbitrary UID). A full daily run is now 72 builds; if it gets slow, rescan published digests instead of rebuilding unchanged locks.
+1. **Repo on GitHub is live** (2026-11-07): ruleset on `main`, bot GitHub App, Renovate, public GHCR packages. Still to do: run `cosign verify` and `gh attestation verify` from outside CI, and watch the first automerged lock refresh PR.
+2. **All 18 images are defined** (72 builds). Their container tests first run in CI on the image PRs (#5-#7). Watch the first runs of the service images (rabbitmq startup, nginx and php-fpm as an arbitrary UID). A full daily run is now 72 builds; if it gets slow, rescan published digests instead of rebuilding unchanged locks.
 3. **Kyverno policy in a cluster.** `policy/verify-wolfi-images.yaml` passes `policy/test.sh` (Kyverno CLI 1.19.2, live registry and Rekor). Still to do: run it in kind, and decide whether to migrate to `ImageValidatingPolicy`/`ValidatingPolicy` (CEL), since Kyverno 1.19 deprecates `ClusterPolicy`.
 4. **harden-runner block mode.** All jobs run `egress-policy: audit`. Collect the endpoints from a few runs, then switch to `block` with per-job allowlists.
 5. **Comparison table** with hummingbird-mirror (CVE counts, size, stream coverage) in both READMEs.
