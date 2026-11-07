@@ -45,7 +45,7 @@ case "$VARIANT" in
   dev)
     echo "Checking javac as an arbitrary UID..."
     OUT="$("$ENGINE" run --rm --user "$ARBITRARY_USER" -v "$WORKDIR:/src:ro,z" --entrypoint /bin/sh "$IMAGE" -c \
-      'javac -d /tmp/out /src/Hello.java && java -cp /tmp/out Hello')"
+      'mkdir -p /tmp/out && javac -d /tmp/out /src/Hello.java && java -cp /tmp/out Hello')"
     [ "$OUT" = ok ] || fail "javac/java failed: $OUT"
     ;;
   "")
