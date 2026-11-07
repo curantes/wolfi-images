@@ -1,0 +1,19 @@
+# Go toolchain. Build stage only: run the result on static (CGO_ENABLED=0)
+# or glibc-dynamic (cgo), so there is no distroless <stream> variant.
+endoflife: go
+package: go-{stream}
+description: Go {stream} toolchain
+
+variants:
+  dev:
+    packages:
+      - go-{stream}
+      - build-base
+      - git
+      - openssh-client
+      - wolfi-base
+      - bash
+    entrypoint: /usr/bin/go
+    environment:
+      GOPATH: /home/nonroot/go
+      GOTOOLCHAIN: local      # never download another toolchain

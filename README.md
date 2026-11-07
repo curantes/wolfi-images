@@ -18,7 +18,14 @@ All images are multi-arch (`linux/amd64`, `linux/arm64`) under `ghcr.io/curantes
 |---|---|---|---|
 | `static` | `latest` | CA certificates, tzdata, `/etc/passwd`; no libc, no shell. For static binaries (Go with `CGO_ENABLED=0`) | – |
 | `glibc-dynamic` | `latest` | `static` plus glibc, libgcc and libstdc++. For dynamically linked binaries (cgo, Rust, C/C++) | adds bash, busybox and `apk` |
+| `go` | `1.26`, `1.27` | – (run on `static` or `glibc-dynamic`) | Go toolchain, gcc, git, ssh client, bash, `apk`; `GOTOOLCHAIN=local` |
+| `nodejs` | `22`, `24`, `26` | Node.js; distroless, no npm | adds npm, `build-base`, bash, busybox and `apk` |
+| `openjdk` | `8`, `11`, `17`, `21`, `25`, `27` | JRE; distroless | full JDK plus bash, busybox and `apk` |
+| `php` | `8.2`–`8.5` | PHP CLI with common extensions; distroless. Also `<stream>-fpm`: PHP-FPM on port 9000, distroless | adds Composer, git, bash, busybox and `apk` |
 | `python` | `3.11`–`3.15` | CPython; distroless (no shell, no `apk`, no pip) | adds pip, Python headers, `build-base`, bash, busybox and `apk` |
+| `rust` | `1.99` | – (run on `glibc-dynamic` or `static`) | rustc, cargo, clippy, rustfmt, gcc, git, bash, `apk` |
+
+`openjdk` is Wolfi's OpenJDK build, following [Eclipse Temurin's support dates](https://endoflife.date/eclipse-temurin) (endoflife.date has no product for plain OpenJDK); it is not Temurin. PHP extensions: bcmath, ctype, curl, dom, fileinfo, iconv, intl, mbstring, mysqlnd, opcache, openssl, PDO (MySQL, PostgreSQL, SQLite), posix, simplexml, sodium, xml, xmlreader, xmlwriter and zip.
 
 The current streams and their status are in [`generated/catalog.json`](generated/catalog.json).
 

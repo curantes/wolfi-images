@@ -1,0 +1,28 @@
+# OpenJDK as built by Wolfi, following Eclipse Temurin's support dates
+# (endoflife.date has no product for plain OpenJDK).
+endoflife: eclipse-temurin
+package: openjdk-{stream}
+description: OpenJDK {stream} (Wolfi build)
+
+variants:
+  # Distroless JRE
+  "":
+    packages:
+      - openjdk-{stream}-jre
+      - openjdk-{stream}-default-jvm
+    version-package: openjdk-{stream}-jre
+    entrypoint: /usr/lib/jvm/default-jvm/bin/java
+    environment:
+      JAVA_HOME: /usr/lib/jvm/default-jvm
+  # Full JDK with a shell and apk, for builds
+  dev:
+    packages:
+      - openjdk-{stream}
+      # default-jdk, not default-jvm: on Java 8 the JRE package conflicts
+      # with the JDK, and default-jdk provides it instead.
+      - openjdk-{stream}-default-jdk
+      - wolfi-base
+      - bash
+    entrypoint: /usr/lib/jvm/default-jvm/bin/java
+    environment:
+      JAVA_HOME: /usr/lib/jvm/default-jvm
