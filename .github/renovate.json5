@@ -16,6 +16,17 @@
   },
   "osvVulnerabilityAlerts": true,
   "minimumReleaseAge": "3 days",
+  "customManagers": [
+    {
+      // apko container image pinned by digest in workflow env (APKO_IMAGE)
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "APKO_IMAGE:\\s*(?<depName>[^\\s:@]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
   "packageRules": [
     {
       "matchManagers": ["github-actions", "custom.regex"],
