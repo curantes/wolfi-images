@@ -2,13 +2,13 @@
   "images": {
     "coredns": {
       "endoflife": null,
-      "streams": {
-        "1.14": {
-          "status": "supported",
-          "eol": null
-        }
-      },
-      "missing": {}
+      "streams": {},
+      "missing": {
+        "1.14": [
+          "unmaintained: Wolfi lists fixes up to 1.14.7-r8 but publishes 1.14.3-r5 (x86_64)",
+          "unmaintained: newest coredns-1.14 build is 152 days old (limit 90)"
+        ]
+      }
     },
     "curl": {
       "endoflife": null,
@@ -22,15 +22,14 @@
     },
     "etcd": {
       "endoflife": "etcd",
-      "streams": {
-        "3.6": {
-          "status": "supported",
-          "eol": null
-        }
-      },
+      "streams": {},
       "missing": {
         "3.7": [
           "no etcd-3.7"
+        ],
+        "3.6": [
+          "unmaintained: Wolfi lists fixes up to 3.6.16-r2 but publishes 3.6.12-r1 (x86_64)",
+          "unmaintained: newest etcd-3.6 build is 157 days old (limit 90)"
         ],
         "3.5": [
           "no etcd-3.5"
@@ -77,17 +76,17 @@
         "3.4": {
           "status": "supported",
           "eol": "2031-04-01"
-        },
-        "3.3": {
-          "status": "supported",
-          "eol": "2027-01-01"
-        },
-        "3.2": {
-          "status": "supported",
-          "eol": "2030-04-01"
         }
       },
       "missing": {
+        "3.3": [
+          "unmaintained: Wolfi lists fixes up to 3.3.11-r0 but publishes 3.3.10-r0 (x86_64)",
+          "unmaintained: newest haproxy-3.3 build is 180 days old (limit 90)"
+        ],
+        "3.2": [
+          "unmaintained: Wolfi lists fixes up to 3.2.20-r0 but publishes 3.2.9-r0 (x86_64)",
+          "unmaintained: newest haproxy-3.2 build is 351 days old (limit 90)"
+        ],
         "3.0": [
           "no haproxy-3.0"
         ],
@@ -105,13 +104,14 @@
         "1.31": {
           "status": "supported",
           "eol": null
-        },
-        "1.30": {
-          "status": "supported",
-          "eol": null
         }
       },
-      "missing": {}
+      "missing": {
+        "1.30": [
+          "unmaintained: Wolfi lists fixes up to 1.30.6-r0 but publishes 1.30.2-r0 (x86_64)",
+          "unmaintained: newest nginx-stable build is 165 days old (limit 90)"
+        ]
+      }
     },
     "nodejs": {
       "endoflife": "nodejs",
@@ -212,15 +212,13 @@
     },
     "rabbitmq": {
       "endoflife": "rabbitmq",
-      "streams": {
-        "4.3": {
-          "status": "supported",
-          "eol": "2027-01-31"
-        }
-      },
+      "streams": {},
       "missing": {
         "4.4": [
           "no rabbitmq-server-4.4"
+        ],
+        "4.3": [
+          "unmaintained: newest rabbitmq-server-4.3 build is 169 days old (limit 90)"
         ]
       }
     },
@@ -250,17 +248,15 @@
         "9.1": {
           "status": "supported",
           "eol": "2031-05-19"
-        },
-        "9.0": {
-          "status": "supported",
-          "eol": "2028-10-21"
-        },
-        "8.1": {
-          "status": "supported",
-          "eol": "2030-03-31"
         }
       },
       "missing": {
+        "9.0": [
+          "unmaintained: newest valkey-9.0 build is 185 days old (limit 90)"
+        ],
+        "8.1": [
+          "unmaintained: newest valkey-8.1 build is 400 days old (limit 90)"
+        ],
         "8.0": [
           "no valkey-8.0"
         ],
@@ -271,28 +267,6 @@
     }
   },
   "builds": [
-    {
-      "name": "coredns",
-      "tag": "1.14",
-      "stream": "1.14",
-      "variant": "",
-      "package": "coredns-1.14",
-      "status": "supported",
-      "eol": null,
-      "config": "generated/coredns/1.14.apko.yaml",
-      "lock": "generated/coredns/1.14.lock.json"
-    },
-    {
-      "name": "coredns",
-      "tag": "1.14-dev",
-      "stream": "1.14",
-      "variant": "dev",
-      "package": "coredns-1.14",
-      "status": "supported",
-      "eol": null,
-      "config": "generated/coredns/1.14-dev.apko.yaml",
-      "lock": "generated/coredns/1.14-dev.lock.json"
-    },
     {
       "name": "curl",
       "tag": "8.23",
@@ -314,28 +288,6 @@
       "eol": null,
       "config": "generated/curl/8.23-dev.apko.yaml",
       "lock": "generated/curl/8.23-dev.lock.json"
-    },
-    {
-      "name": "etcd",
-      "tag": "3.6",
-      "stream": "3.6",
-      "variant": "",
-      "package": "etcd-3.6",
-      "status": "supported",
-      "eol": null,
-      "config": "generated/etcd/3.6.apko.yaml",
-      "lock": "generated/etcd/3.6.lock.json"
-    },
-    {
-      "name": "etcd",
-      "tag": "3.6-dev",
-      "stream": "3.6",
-      "variant": "dev",
-      "package": "etcd-3.6",
-      "status": "supported",
-      "eol": null,
-      "config": "generated/etcd/3.6-dev.apko.yaml",
-      "lock": "generated/etcd/3.6-dev.lock.json"
     },
     {
       "name": "git",
@@ -426,50 +378,6 @@
       "lock": "generated/haproxy/3.4-dev.lock.json"
     },
     {
-      "name": "haproxy",
-      "tag": "3.3",
-      "stream": "3.3",
-      "variant": "",
-      "package": "haproxy-3.3",
-      "status": "supported",
-      "eol": "2027-01-01",
-      "config": "generated/haproxy/3.3.apko.yaml",
-      "lock": "generated/haproxy/3.3.lock.json"
-    },
-    {
-      "name": "haproxy",
-      "tag": "3.3-dev",
-      "stream": "3.3",
-      "variant": "dev",
-      "package": "haproxy-3.3",
-      "status": "supported",
-      "eol": "2027-01-01",
-      "config": "generated/haproxy/3.3-dev.apko.yaml",
-      "lock": "generated/haproxy/3.3-dev.lock.json"
-    },
-    {
-      "name": "haproxy",
-      "tag": "3.2",
-      "stream": "3.2",
-      "variant": "",
-      "package": "haproxy-3.2",
-      "status": "supported",
-      "eol": "2030-04-01",
-      "config": "generated/haproxy/3.2.apko.yaml",
-      "lock": "generated/haproxy/3.2.lock.json"
-    },
-    {
-      "name": "haproxy",
-      "tag": "3.2-dev",
-      "stream": "3.2",
-      "variant": "dev",
-      "package": "haproxy-3.2",
-      "status": "supported",
-      "eol": "2030-04-01",
-      "config": "generated/haproxy/3.2-dev.apko.yaml",
-      "lock": "generated/haproxy/3.2-dev.lock.json"
-    },
-    {
       "name": "nginx",
       "tag": "1.31",
       "stream": "1.31",
@@ -490,28 +398,6 @@
       "eol": null,
       "config": "generated/nginx/1.31-dev.apko.yaml",
       "lock": "generated/nginx/1.31-dev.lock.json"
-    },
-    {
-      "name": "nginx",
-      "tag": "1.30",
-      "stream": "1.30",
-      "variant": "",
-      "package": "nginx-stable",
-      "status": "supported",
-      "eol": null,
-      "config": "generated/nginx/1.30.apko.yaml",
-      "lock": "generated/nginx/1.30.lock.json"
-    },
-    {
-      "name": "nginx",
-      "tag": "1.30-dev",
-      "stream": "1.30",
-      "variant": "dev",
-      "package": "nginx-stable",
-      "status": "supported",
-      "eol": null,
-      "config": "generated/nginx/1.30-dev.apko.yaml",
-      "lock": "generated/nginx/1.30-dev.lock.json"
     },
     {
       "name": "nodejs",
@@ -932,28 +818,6 @@
       "lock": "generated/python/3.11-dev.lock.json"
     },
     {
-      "name": "rabbitmq",
-      "tag": "4.3",
-      "stream": "4.3",
-      "variant": "",
-      "package": "rabbitmq-server-4.3",
-      "status": "supported",
-      "eol": "2027-01-31",
-      "config": "generated/rabbitmq/4.3.apko.yaml",
-      "lock": "generated/rabbitmq/4.3.lock.json"
-    },
-    {
-      "name": "rabbitmq",
-      "tag": "4.3-dev",
-      "stream": "4.3",
-      "variant": "dev",
-      "package": "rabbitmq-server-4.3",
-      "status": "supported",
-      "eol": "2027-01-31",
-      "config": "generated/rabbitmq/4.3-dev.apko.yaml",
-      "lock": "generated/rabbitmq/4.3-dev.lock.json"
-    },
-    {
       "name": "rust",
       "tag": "1.99-dev",
       "stream": "1.99",
@@ -996,50 +860,6 @@
       "eol": "2031-05-19",
       "config": "generated/valkey/9.1-dev.apko.yaml",
       "lock": "generated/valkey/9.1-dev.lock.json"
-    },
-    {
-      "name": "valkey",
-      "tag": "9.0",
-      "stream": "9.0",
-      "variant": "",
-      "package": "valkey-9.0",
-      "status": "supported",
-      "eol": "2028-10-21",
-      "config": "generated/valkey/9.0.apko.yaml",
-      "lock": "generated/valkey/9.0.lock.json"
-    },
-    {
-      "name": "valkey",
-      "tag": "9.0-dev",
-      "stream": "9.0",
-      "variant": "dev",
-      "package": "valkey-9.0",
-      "status": "supported",
-      "eol": "2028-10-21",
-      "config": "generated/valkey/9.0-dev.apko.yaml",
-      "lock": "generated/valkey/9.0-dev.lock.json"
-    },
-    {
-      "name": "valkey",
-      "tag": "8.1",
-      "stream": "8.1",
-      "variant": "",
-      "package": "valkey-8.1",
-      "status": "supported",
-      "eol": "2030-03-31",
-      "config": "generated/valkey/8.1.apko.yaml",
-      "lock": "generated/valkey/8.1.lock.json"
-    },
-    {
-      "name": "valkey",
-      "tag": "8.1-dev",
-      "stream": "8.1",
-      "variant": "dev",
-      "package": "valkey-8.1",
-      "status": "supported",
-      "eol": "2030-03-31",
-      "config": "generated/valkey/8.1-dev.apko.yaml",
-      "lock": "generated/valkey/8.1-dev.lock.json"
     }
   ]
 }

@@ -16,7 +16,7 @@ Working notes. Update as items land.
 ## Next
 
 1. **Repo on GitHub is live** (2026-11-07): ruleset on `main`, bot GitHub App, Renovate, public GHCR packages. Still to do: run `cosign verify` and `gh attestation verify` from outside CI, and watch the first automerged lock refresh PR.
-2. **All 18 images are defined** (72 builds). Their container tests first run in CI on the image PRs (#5-#7). Watch the first runs of the service images (rabbitmq startup, nginx and php-fpm as an arbitrary UID). A full daily run is now 72 builds; if it gets slow, rescan published digests instead of rebuilding unchanged locks.
+2. **All 18 images are defined; 54 builds are maintained.** Public Wolfi maintains no stream of coredns, etcd or rabbitmq and only the newest of haproxy, nginx and valkey (see the `stream-missing` issue). For those, decide per stream: hummingbird-mirror where Red Hat ships it, melange, or wait. Watch the first CI runs of the service images (nginx as an arbitrary UID).
 3. **Kyverno policy in a cluster.** `policy/verify-wolfi-images.yaml` passes `policy/test.sh` (Kyverno CLI 1.19.2, live registry and Rekor). Still to do: run it in kind, and decide whether to migrate to `ImageValidatingPolicy`/`ValidatingPolicy` (CEL), since Kyverno 1.19 deprecates `ClusterPolicy`.
 4. **harden-runner block mode.** All jobs run `egress-policy: audit`. Collect the endpoints from a few runs, then switch to `block` with per-job allowlists.
 5. **Comparison table** with hummingbird-mirror (CVE counts, size, stream coverage) in both READMEs.
