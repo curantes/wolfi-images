@@ -34,6 +34,7 @@ Working notes. Update as items land.
 
 ## Lessons Learned
 
+- **apko embeds the git commit** (`org.opencontainers.image.revision`) unless built with `--vcs=false`, so every commit changed every digest.
 - **Free Chainguard images only publish `latest`/`latest-dev`**, so version streams mean building with apko.
 - **apko's tarball output is docker-loadable** and its `index.json` *is* the image index. Writing to a directory path fails ("is a directory"), so convert the tarball (`scripts/oci_layout.py`) to push by digest with `regctl`.
 - **Wolfi uses a merged `/usr`**: `/bin` and `/sbin` are symlinks to `/usr/bin`.

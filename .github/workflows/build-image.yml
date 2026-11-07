@@ -77,8 +77,11 @@ jobs:
           VERSION="$(scripts/version.sh "$LOCK" "$PACKAGE" "$STREAM")"
           mkdir -p out/sbom
           # Retry transient package download errors; the lock pins every byte.
+          # --vcs=false: apko would otherwise embed the git commit as
+          # org.opencontainers.image.revision, so every commit (even docs)
+          # would change the digest. The commit is in the SLSA provenance.
           for attempt in 1 2 3; do
-            apko build --lockfile "$LOCK" --sbom-path out/sbom "$CONFIG" "local/$NAME:$TAG" out/image.tar && break
+            apko build --vcs=false --lockfile "$LOCK" --sbom-path out/sbom "$CONFIG" "local/$NAME:$TAG" out/image.tar && break
             [ "$attempt" -lt 3 ] || { echo "apko build failed after 3 attempts"; exit 1; }
             echo "::warning::apko build failed (attempt $attempt); retrying"
             sleep $((attempt * 15))
