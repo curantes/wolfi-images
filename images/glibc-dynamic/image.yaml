@@ -1,0 +1,23 @@
+# Base for dynamically linked programs (Go with cgo, Rust gnu, C/C++):
+# glibc, libgcc and libstdc++ on top of static. Rolling `latest` tag.
+stream: latest
+description: glibc runtime for dynamically linked programs
+package: glibc               # its version is shown in the SBOM, not in tags
+version-tag: false
+
+variants:
+  "":
+    packages:
+      - glibc
+      - ld-linux
+      - libgcc
+      - libstdc++
+  # Debugging and build stage: shell and apk.
+  dev:
+    packages:
+      - glibc
+      - ld-linux
+      - libgcc
+      - libstdc++
+      - wolfi-base
+      - bash

@@ -1,0 +1,9 @@
+# Base for statically linked programs (Go with CGO_ENABLED=0, Rust musl):
+# CA certificates, tzdata, /etc/passwd with nonroot. No libc, no shell.
+# Not on endoflife.date and unversioned: one rolling `latest` tag.
+stream: latest
+description: Static base (CA certificates, tzdata; no libc, no shell)
+
+variants:
+  "":
+    packages: []

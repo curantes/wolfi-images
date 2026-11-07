@@ -71,7 +71,11 @@ jobs:
         run: |
           [ -f "tests/$NAME/test.sh" ] || { echo "Missing tests/$NAME/test.sh"; exit 1; }
           [ -f "$LOCK" ] || { echo "Missing lock $LOCK; run scripts/lock.sh"; exit 1; }
-          VERSION="$(scripts/version.sh "$LOCK" "$PACKAGE" "$STREAM")"
+          # Images without an upstream version (static) get no version tag.
+          VERSION=""
+          if [ -n "$PACKAGE" ]; then
+            VERSION="$(scripts/version.sh "$LOCK" "$PACKAGE" "$STREAM")"
+          fi
           mkdir -p out/sbom
           # Retry transient package download errors; the lock pins every byte.
           for attempt in 1 2 3; do
@@ -83,7 +87,7 @@ jobs:
           DIGEST="$(python3 -I scripts/oci_layout.py out/image.tar out/layout)"
           ARCHS="$(tar -xOf out/image.tar index.json | jq -r '[.manifests[].platform.architecture] | sort | join(",")')"
           [ "$ARCHS" = "amd64,arm64" ] || { echo "Expected amd64 and arm64, got '$ARCHS'"; exit 1; }
-          echo "Built $NAME:$TAG ($VERSION) as $DIGEST"
+          echo "Built $NAME:$TAG (${VERSION:-no version}) as $DIGEST"
           {
             echo "digest=$DIGEST"
             echo "version=$VERSION"
@@ -355,9 +359,10 @@ jobs:
           APPROVED: ${{ steps.approval.outputs.approved }}
         run: |
           SUFFIX="${VARIANT:+-$VARIANT}"
-          TAGS=("$TAG" "$VERSION$SUFFIX")
+          TAGS=("$TAG")
+          if [ -n "$VERSION" ]; then TAGS+=("$VERSION$SUFFIX"); fi
           if [ "$APPROVED" = "false" ]; then
-            UNIQUE="$VERSION$SUFFIX-$(date -u +%Y%m%dT%H%M%SZ)"
+            UNIQUE="${VERSION:-$STREAM}$SUFFIX-$(date -u +%Y%m%dT%H%M%SZ)"
             if regctl image digest "$IMAGE:$UNIQUE" > /dev/null 2>&1; then
               echo "Tag $UNIQUE already exists; refusing to overwrite"
               exit 1
@@ -379,7 +384,7 @@ jobs:
           {
             echo "### Published \`$IMAGE@$DIGEST\`"
             echo
-            echo "Version $VERSION, stream $STREAM ($STATUS, EOL ${EOL:-n/a})"
+            echo "Version ${VERSION:-n/a}, stream $STREAM ($STATUS, EOL ${EOL:-n/a})"
             if [ "$APPROVED" = "true" ]; then echo; echo "Already approved; tags refreshed."; fi
             echo
             echo "Tags:"

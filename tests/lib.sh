@@ -27,7 +27,7 @@ check_common() {
 
   echo "Checking for setuid/setgid files..."
   local cid special
-  cid="$("$ENGINE" create "$IMAGE")"
+  cid="$("$ENGINE" create --entrypoint /nonexistent "$IMAGE")"
   special="$("$ENGINE" export "$cid" | tar -tvf - | awk '$1 ~ /^-.*[sS]/ {print $NF}')"
   "$ENGINE" rm "$cid" > /dev/null
   [ -z "$special" ] || fail "setuid/setgid files: $special"
@@ -45,4 +45,21 @@ check_common() {
       ;;
     *) fail "unknown variant '$VARIANT'" ;;
   esac
+}
+
+# image_files: list every path in the image (no leading slash), for checks on
+# images without a shell.
+image_files() {
+  local cid
+  cid="$("$ENGINE" create --entrypoint /nonexistent "$IMAGE")"
+  "$ENGINE" export "$cid" | tar -tf - | sed 's|^\./||'
+  "$ENGINE" rm "$cid" > /dev/null
+}
+
+# image_file PATH: print one file from the image.
+image_file() {
+  local cid
+  cid="$("$ENGINE" create --entrypoint /nonexistent "$IMAGE")"
+  "$ENGINE" cp "$cid:$1" - | tar -xOf -
+  "$ENGINE" rm "$cid" > /dev/null
 }
