@@ -19,9 +19,14 @@ grep -q "^curl $STREAM\." <<< "$OUT" || fail "unexpected version: $OUT"
 for feature in HTTP2 SSL; do grep -q "$feature" <<< "$OUT" || fail "missing feature $feature"; done
 grep -qE '^Protocols:.* https( |$)' <<< "$OUT" || fail "no https support"
 
-echo "Checking it loads the CA bundle as an arbitrary UID..."
-"$ENGINE" run --rm --user "$ARBITRARY_USER" --network none "$IMAGE" -sS --max-time 2 https://example.invalid 2>&1 \
-  | grep -qiE 'resolve|could not|failed' || fail "unexpected curl behaviour"
-[ -n "$(image_file /etc/ssl/certs/ca-certificates.crt | head -c 100)" ] || fail "empty CA bundle"
+# A real HTTPS request is the only way to exercise the default CA bundle:
+# curl loads it during the TLS handshake, after name resolution.
+echo "Checking an HTTPS request with the default CA bundle as an arbitrary UID..."
+for attempt in 1 2 3; do
+  CODE="$(run_arbitrary -sS --max-time 20 -o /dev/null -w '%{http_code}' https://github.com 2>&1)" && break
+  echo "attempt $attempt: $CODE"
+  sleep $((attempt * 5))
+done
+[[ "$CODE" =~ ^(200|301|302)$ ]] || fail "HTTPS request failed: $CODE"
 
 echo "All curl tests passed for $IMAGE ($TAG)."
