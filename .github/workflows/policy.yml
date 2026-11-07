@@ -1,0 +1,61 @@
+name: Policy - Kyverno Tests
+
+# Runs policy/test.sh: the Kyverno policy against published images, the live
+# registry and Rekor, including the EOL rules at pinned dates.
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'policy/**'
+      - '.github/workflows/policy.yml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'policy/**'
+      - '.github/workflows/policy.yml'
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  # renovate: datasource=github-releases depName=kyverno/kyverno
+  KYVERNO_VERSION: v1.19.2
+
+jobs:
+  test:
+    name: Kyverno Policy Tests
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout Source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Install Kyverno CLI
+        run: |
+          FILE="kyverno-cli_${KYVERNO_VERSION}_linux_x86_64.tar.gz"
+          BASE="https://github.com/kyverno/kyverno/releases/download/$KYVERNO_VERSION"
+          cd "$RUNNER_TEMP"
+          curl -fsSL --retry 3 -o "$FILE" "$BASE/$FILE"
+          curl -fsSL --retry 3 -o "$FILE.sigstore.json" "$BASE/$FILE.sigstore.json"
+          cosign verify-blob "$FILE" --bundle "$FILE.sigstore.json" \
+            --certificate-identity "https://github.com/kyverno/kyverno/.github/workflows/release.yaml@refs/tags/$KYVERNO_VERSION" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          tar -xzf "$FILE" kyverno
+          install -m 0755 kyverno /usr/local/bin/kyverno
+
+      - name: Run Policy Tests
+        run: policy/test.sh
