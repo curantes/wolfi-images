@@ -34,6 +34,7 @@ Working notes. Update as items land.
 
 ## Lessons Learned
 
+- **apko's release binaries are only verifiable through a Rekor log search** (`.sig`/`.crt`, no bundle), so verifying them made every build fail while Rekor's v1 search API returned 500s. Run apko from its container image pinned by digest instead.
 - **The Kyverno CLI skips `imageRegistry` context lookups unless run with `--registry`**, and a rule `message` can't use `foreach` variables.
 - **Free Chainguard images only publish `latest`/`latest-dev`**, so version streams mean building with apko.
 - **apko's tarball output is docker-loadable** and its `index.json` *is* the image index. Writing to a directory path fails ("is a directory"), so convert the tarball (`scripts/oci_layout.py`) to push by digest with `regctl`.
