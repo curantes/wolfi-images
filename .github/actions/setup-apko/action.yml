@@ -1,43 +1,43 @@
 name: Set up apko
 description: >-
-  Download an apko release and verify its keyless Sigstore signature against
-  apko's release workflow before putting it on PATH. Needs cosign on PATH.
+  Put an `apko` wrapper on PATH that runs apko from its container image,
+  pinned by digest. The digest fixes the exact bytes without any online
+  lookup; apko's release binaries are only verifiable through a Rekor log
+  search, which made every build fail whenever Rekor's search API was down.
 
 inputs:
-  version:
-    description: apko release (without the leading v)
+  image:
+    description: apko container image pinned by digest (<repo>:<tag>@sha256:<digest>)
     required: true
 
 runs:
   using: composite
   steps:
-    - name: Download and Verify apko
+    - name: Install apko Wrapper
       shell: bash
       env:
-        VERSION: ${{ inputs.version }}
-        IDENTITY: https://github.com/chainguard-dev/apko/.github/workflows/release.yaml@refs/heads/main
-        ISSUER: https://token.actions.githubusercontent.com
+        IMAGE: ${{ inputs.image }}
       run: |
-        case "$RUNNER_ARCH" in
-          X64) ARCH=amd64 ;;
-          ARM64) ARCH=arm64 ;;
-          *) echo "Unsupported runner architecture $RUNNER_ARCH"; exit 1 ;;
-        esac
-        FILE="apko_${VERSION}_linux_${ARCH}.tar.gz"
-        BASE="https://github.com/chainguard-dev/apko/releases/download/v${VERSION}"
-        DIR="$RUNNER_TEMP/apko"
-        mkdir -p "$DIR"
-        cd "$DIR"
-        for f in "$FILE" "$FILE.sig" "$FILE.crt"; do
-          curl -fsSL --retry 3 -o "$f" "$BASE/$f"
+        if [[ "$IMAGE" != *@sha256:* ]]; then
+          echo "apko image must be pinned by digest (got: $IMAGE)"
+          exit 1
+        fi
+        for attempt in 1 2 3; do
+          docker pull -q "$IMAGE" && break
+          [ "$attempt" -lt 3 ] || { echo "Pulling $IMAGE failed after 3 attempts"; exit 1; }
+          echo "::warning::Pulling apko failed (attempt $attempt); retrying"
+          sleep $((attempt * 15))
         done
-        cosign verify-blob "$FILE" \
-          --signature "$FILE.sig" \
-          --certificate "$FILE.crt" \
-          --certificate-identity "$IDENTITY" \
-          --certificate-oidc-issuer "$ISSUER"
-        tar -xzf "$FILE"
-        BIN="$(find . -type f -name apko | head -n1)"
-        install -m 0755 "$BIN" "$DIR/bin/apko" -D
-        echo "$DIR/bin" >> "$GITHUB_PATH"
-        "$DIR/bin/apko" version | tail -n 3
+        DIR="$RUNNER_TEMP/apko/bin"
+        mkdir -p "$DIR"
+        # Runs as the runner's user with the working directory mounted at the
+        # same path, so relative paths and output ownership behave like a
+        # local binary.
+        {
+          echo '#!/usr/bin/env bash'
+          echo 'exec docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \'
+          echo '  -v "$PWD:$PWD" -w "$PWD" '"'$IMAGE'"' "$@"'
+        } > "$DIR/apko"
+        chmod +x "$DIR/apko"
+        echo "$DIR" >> "$GITHUB_PATH"
+        "$DIR/apko" version | tail -n 3
