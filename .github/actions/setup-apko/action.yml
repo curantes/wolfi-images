@@ -1,0 +1,43 @@
+name: Set up apko
+description: >-
+  Download an apko release and verify its keyless Sigstore signature against
+  apko's release workflow before putting it on PATH. Needs cosign on PATH.
+
+inputs:
+  version:
+    description: apko release (without the leading v)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Download and Verify apko
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        IDENTITY: https://github.com/chainguard-dev/apko/.github/workflows/release.yaml@refs/heads/main
+        ISSUER: https://token.actions.githubusercontent.com
+      run: |
+        case "$RUNNER_ARCH" in
+          X64) ARCH=amd64 ;;
+          ARM64) ARCH=arm64 ;;
+          *) echo "Unsupported runner architecture $RUNNER_ARCH"; exit 1 ;;
+        esac
+        FILE="apko_${VERSION}_linux_${ARCH}.tar.gz"
+        BASE="https://github.com/chainguard-dev/apko/releases/download/v${VERSION}"
+        DIR="$RUNNER_TEMP/apko"
+        mkdir -p "$DIR"
+        cd "$DIR"
+        for f in "$FILE" "$FILE.sig" "$FILE.crt"; do
+          curl -fsSL --retry 3 -o "$f" "$BASE/$f"
+        done
+        cosign verify-blob "$FILE" \
+          --signature "$FILE.sig" \
+          --certificate "$FILE.crt" \
+          --certificate-identity "$IDENTITY" \
+          --certificate-oidc-issuer "$ISSUER"
+        tar -xzf "$FILE"
+        BIN="$(find . -type f -name apko | head -n1)"
+        install -m 0755 "$BIN" "$DIR/bin/apko" -D
+        echo "$DIR/bin" >> "$GITHUB_PATH"
+        "$DIR/bin/apko" version | tail -n 3

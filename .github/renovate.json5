@@ -1,0 +1,31 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  // Renovate only maintains the pipeline's own dependencies (actions, apko,
+  // regctl). Wolfi packages are pinned in generated/*.lock.json and refreshed
+  // by .github/workflows/refresh-locks.yml.
+  "extends": [
+    "config:best-practices",
+    ":semanticCommits",
+    "customManagers:githubActionsVersions"
+  ],
+  "labels": ["dependencies"],
+  "reviewers": ["curantes"],
+  "vulnerabilityAlerts": {
+    "labels": ["dependencies", "security"],
+    "schedule": ["at any time"]
+  },
+  "osvVulnerabilityAlerts": true,
+  "minimumReleaseAge": "3 days",
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions", "custom.regex"],
+      "groupName": "pipeline dependencies",
+      "schedule": ["before 4am on monday"]
+    },
+    {
+      "matchUpdateTypes": ["digest", "pin", "pinDigest", "patch"],
+      "automerge": true,
+      "platformAutomerge": true
+    }
+  ]
+}

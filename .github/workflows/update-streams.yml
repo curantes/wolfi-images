@@ -1,0 +1,130 @@
+name: Streams - Update from endoflife.date
+
+# Regenerates the catalog from endoflife.date and the Wolfi index: adds new
+# streams, marks streams in their post-EOL grace period as deprecated and
+# freezes them afterwards. Opens a PR for human review (never automerged).
+# Supported streams that Wolfi doesn't package are tracked in one issue.
+#
+# Uses the same GitHub App token as the lock refresh so the PR runs CI.
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  # renovate: datasource=github-releases depName=chainguard-dev/apko
+  APKO_VERSION: 1.4.13
+  BRANCH: bot/update-streams
+
+jobs:
+  update:
+    name: Update Streams
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Create App Token
+        id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
+      - name: Checkout Source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Install apko
+        uses: ./.github/actions/setup-apko
+        with:
+          version: ${{ env.APKO_VERSION }}
+
+      - name: Generate Catalog
+        run: python3 -I scripts/generate.py | tee generate.log
+
+      # Only new streams get a lock here; existing locks are the refresh
+      # workflow's job, which keeps this PR to stream changes.
+      - name: Lock New Streams
+        run: |
+          jq -r '.builds[] | "\(.config) \(.lock)"' generated/catalog.json \
+            | while read -r config lock; do
+                [ -f "$lock" ] || scripts/lock.sh "$config"
+              done
+
+      - name: Track Missing Streams
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          LABEL: stream-missing
+        run: |
+          MISSING="$(jq -r '.images | to_entries[] | .key as $n | .value.missing | to_entries[]
+            | "- `\($n):\(.key)`: \(.value | join(", "))"' generated/catalog.json)"
+          ISSUE="$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$MISSING" ]; then
+            [ -z "$ISSUE" ] || gh issue close "$ISSUE" --comment "Every supported stream is packaged in Wolfi now."
+            exit 0
+          fi
+          BODY="These streams are supported according to endoflife.date but Wolfi doesn't package them (on every architecture), so they aren't built:
+
+          $MISSING
+
+          Options: wait for Wolfi, or build the package with melange (see ROADMAP)."
+          if [ -n "$ISSUE" ]; then
+            gh issue edit "$ISSUE" --body "$BODY"
+          else
+            gh label create "$LABEL" --color FBCA04 --description "Supported stream not packaged in Wolfi" --force
+            gh issue create --title "Supported streams missing from Wolfi" --label "$LABEL" --body "$BODY"
+          fi
+
+      - name: Open or Update PR
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          if git diff --quiet -- generated/ && [ -z "$(git ls-files --others --exclude-standard generated/)" ]; then
+            echo "Streams are current."
+            exit 0
+          fi
+          {
+            echo "Stream changes from endoflife.date and the Wolfi index. Review before merging."
+            echo
+            echo '```'
+            cat generate.log
+            echo '```'
+          } > body.md
+          git config user.name "wolfi-images-bot"
+          git config user.email "wolfi-images-bot@users.noreply.github.com"
+          git switch -C "$BRANCH"
+          git add generated/
+          git commit -q -F - <<'EOF'
+          feat(streams): update streams from endoflife.date
+
+          Add newly supported streams, mark streams in their post-EOL grace
+          period as deprecated and freeze those past it.
+          EOF
+          git push -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$BRANCH"
+          PR="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$PR" ]; then
+            gh label create streams --color 1D76DB --description "Stream added, deprecated or frozen" --force
+            gh pr create --head "$BRANCH" --title "feat(streams): update streams from endoflife.date" \
+              --body-file body.md --label streams --reviewer curantes
+          else
+            gh pr edit "$PR" --body-file body.md
+          fi

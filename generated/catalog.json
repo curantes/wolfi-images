@@ -1,0 +1,142 @@
+{
+  "images": {
+    "python": {
+      "endoflife": "python",
+      "streams": {
+        "3.15": {
+          "status": "supported",
+          "eol": "2031-10-31"
+        },
+        "3.14": {
+          "status": "supported",
+          "eol": "2030-10-31"
+        },
+        "3.13": {
+          "status": "supported",
+          "eol": "2029-10-31"
+        },
+        "3.12": {
+          "status": "supported",
+          "eol": "2028-10-31"
+        },
+        "3.11": {
+          "status": "supported",
+          "eol": "2027-10-31"
+        }
+      },
+      "missing": {}
+    }
+  },
+  "builds": [
+    {
+      "name": "python",
+      "tag": "3.15",
+      "stream": "3.15",
+      "variant": "",
+      "package": "python-3.15",
+      "status": "supported",
+      "eol": "2031-10-31",
+      "config": "generated/python/3.15.apko.yaml",
+      "lock": "generated/python/3.15.lock.json"
+    },
+    {
+      "name": "python",
+      "tag": "3.15-dev",
+      "stream": "3.15",
+      "variant": "dev",
+      "package": "python-3.15",
+      "status": "supported",
+      "eol": "2031-10-31",
+      "config": "generated/python/3.15-dev.apko.yaml",
+      "lock": "generated/python/3.15-dev.lock.json"
+    },
+    {
+      "name": "python",
+      "tag": "3.14",
+      "stream": "3.14",
+      "variant": "",
+      "package": "python-3.14",
+      "status": "supported",
+      "eol": "2030-10-31",
+      "config": "generated/python/3.14.apko.yaml",
+      "lock": "generated/python/3.14.lock.json"
+    },
+    {
+      "name": "python",
+      "tag": "3.14-dev",
+      "stream": "3.14",
+      "variant": "dev",
+      "package": "python-3.14",
+      "status": "supported",
+      "eol": "2030-10-31",
+      "config": "generated/python/3.14-dev.apko.yaml",
+      "lock": "generated/python/3.14-dev.lock.json"
+    },
+    {
+      "name": "python",
+      "tag": "3.13",
+      "stream": "3.13",
+      "variant": "",
+      "package": "python-3.13",
+      "status": "supported",
+      "eol": "2029-10-31",
+      "config": "generated/python/3.13.apko.yaml",
+      "lock": "generated/python/3.13.lock.json"
+    },
+    {
+      "name": "python",
+      "tag": "3.13-dev",
+      "stream": "3.13",
+      "variant": "dev",
+      "package": "python-3.13",
+      "status": "supported",
+      "eol": "2029-10-31",
+      "config": "generated/python/3.13-dev.apko.yaml",
+      "lock": "generated/python/3.13-dev.lock.json"
+    },
+    {
+      "name": "python",
+      "tag": "3.12",
+      "stream": "3.12",
+      "variant": "",
+      "package": "python-3.12",
+      "status": "supported",
+      "eol": "2028-10-31",
+      "config": "generated/python/3.12.apko.yaml",
+      "lock": "generated/python/3.12.lock.json"
+    },
+    {
+      "name": "python",
+      "tag": "3.12-dev",
+      "stream": "3.12",
+      "variant": "dev",
+      "package": "python-3.12",
+      "status": "supported",
+      "eol": "2028-10-31",
+      "config": "generated/python/3.12-dev.apko.yaml",
+      "lock": "generated/python/3.12-dev.lock.json"
+    },
+    {
+      "name": "python",
+      "tag": "3.11",
+      "stream": "3.11",
+      "variant": "",
+      "package": "python-3.11",
+      "status": "supported",
+      "eol": "2027-10-31",
+      "config": "generated/python/3.11.apko.yaml",
+      "lock": "generated/python/3.11.lock.json"
+    },
+    {
+      "name": "python",
+      "tag": "3.11-dev",
+      "stream": "3.11",
+      "variant": "dev",
+      "package": "python-3.11",
+      "status": "supported",
+      "eol": "2027-10-31",
+      "config": "generated/python/3.11-dev.apko.yaml",
+      "lock": "generated/python/3.11-dev.lock.json"
+    }
+  ]
+}

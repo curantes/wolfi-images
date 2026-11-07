@@ -1,0 +1,22 @@
+# CPython. One image per supported endoflife.date cycle that Wolfi packages.
+# `{stream}` is replaced with the cycle (e.g. 3.12).
+endoflife: python             # https://endoflife.date/python
+package: python-{stream}      # Wolfi package that defines the stream; its version is the version tag
+description: CPython {stream}
+
+variants:
+  # Distroless: interpreter and stdlib only. No shell, no apk, no pip.
+  "":
+    packages:
+      - python-{stream}
+    entrypoint: /usr/bin/python{stream}
+  # Build stage: shell, apk, pip and a C toolchain for native wheels.
+  dev:
+    packages:
+      - python-{stream}
+      - python-{stream}-dev
+      - py{stream}-pip
+      - wolfi-base
+      - bash
+      - build-base
+    entrypoint: /usr/bin/python{stream}

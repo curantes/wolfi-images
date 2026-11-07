@@ -1,0 +1,175 @@
+name: Build - Wolfi Images
+
+on:
+  push:
+    branches: [ "main" ]
+  # Runs on every PR so the required "Build Result" check always reports;
+  # the plan job skips builds when no image inputs changed.
+  pull_request:
+    branches: [ "main" ]
+  # Daily full run: rebuilds every stream from its lock (reproducible, so the
+  # digest stays the same), rescans it against today's vulnerability data,
+  # and promotes any stream whose tags don't point at its approved digest yet
+  # (e.g. a push run that was cancelled before it started).
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions: {}
+
+env:
+  REGISTRY: ghcr.io/curantes/wolfi-images
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.plan.outputs.changed }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      registry: ${{ steps.plan.outputs.registry }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout Source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      # Generated files must match their inputs: a hand-edited config or a
+      # config without a lock never reaches a build.
+      - name: Check Generated Files
+        run: |
+          jq -r '.builds[] | .config, .lock' generated/catalog.json | while read -r f; do
+            [ -f "$f" ] || { echo "Missing $f (run scripts/generate.py and scripts/lock.sh)"; exit 1; }
+          done
+          for img in images/*/image.yaml; do
+            name="$(basename "$(dirname "$img")")"
+            [ -f "tests/$name/test.sh" ] || { echo "Missing tests/$name/test.sh"; exit 1; }
+          done
+
+      # PRs and pushes build entries whose config, lock or tests changed.
+      # Pipeline, key or shared-template changes, the daily run and manual
+      # runs build every entry.
+      - name: Plan Builds
+        id: plan
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          ALL="$(jq -c '.builds' generated/catalog.json)"
+          case "$GITHUB_EVENT_NAME" in
+            pull_request) BASE="$PR_BASE" ;;
+            push) BASE="$PUSH_BEFORE" ;;
+            *) BASE="" ;;
+          esac
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            MATRIX="$ALL"
+            echo "Full run ($GITHUB_EVENT_NAME): building every entry."
+          else
+            # Outside any `if` so a failed diff fails the job instead of skipping
+            CHANGED_FILES="$(git diff --name-only "$BASE" HEAD)"
+            if grep -qE '^(keys/|images/base\.yaml$|tests/lib\.sh$|scripts/(oci_layout\.py|version\.sh)$|vex/|\.github/(actions/|workflows/build(-image)?\.yml$))' <<< "$CHANGED_FILES"; then
+              MATRIX="$ALL"
+              echo "Pipeline changed: building every entry."
+            else
+              FILES="$(jq -Rsc 'split("\n") | map(select(. != ""))' <<< "$CHANGED_FILES")"
+              MATRIX="$(jq -c --argjson f "$FILES" \
+                'map(select((.config | IN($f[])) or (.lock | IN($f[])) or ("tests/\(.name)/test.sh" | IN($f[]))))' <<< "$ALL")"
+              echo "Building entries whose config, lock or tests changed."
+            fi
+          fi
+          jq -r '.[] | "- \(.name):\(.tag) (\(.status))"' <<< "$MATRIX"
+          {
+            echo "changed=$(jq 'length > 0' <<< "$MATRIX")"
+            echo "matrix=$MATRIX"
+            echo "registry=$REGISTRY"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: ${{ matrix.build.name }}:${{ matrix.build.tag }}
+    needs: plan
+    if: needs.plan.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        build: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    uses: ./.github/workflows/build-image.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      security-events: write
+    with:
+      build: ${{ toJSON(matrix.build) }}
+      registry: ${{ needs.plan.outputs.registry }}
+      promote: ${{ github.event_name != 'pull_request' }}
+
+  # Single stable check for branch protection; matrix job names change as
+  # streams come and go.
+  result:
+    name: Build Result
+    needs: [plan, build]
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions: {}
+    steps:
+      - name: Check Build Jobs
+        env:
+          CHANGED: ${{ needs.plan.outputs.changed }}
+          PLAN: ${{ needs.plan.result }}
+          BUILD: ${{ needs.build.result }}
+        run: |
+          echo "plan=$PLAN build=$BUILD changed=$CHANGED"
+          [ "$PLAN" = "success" ] || exit 1
+          if [ "$CHANGED" = "true" ]; then
+            [ "$BUILD" = "success" ]
+          else
+            [ "$BUILD" = "skipped" ]
+          fi
+
+  # Builds, rescans and promotions run unattended (lock refreshes automerge),
+  # so track failures in one issue. Only a full run (daily or manual) closes it.
+  alert:
+    name: Alert on Failure
+    needs: result
+    if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+    steps:
+      - name: Open or Close Alert Issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RESULT: ${{ needs.result.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          LABEL: wolfi-alert
+        run: |
+          ISSUE="$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')"
+          if [ "$RESULT" = "success" ]; then
+            if [ -n "$ISSUE" ] && [ "$GITHUB_EVENT_NAME" != "push" ]; then
+              gh issue close "$ISSUE" --comment "Recovered: the $GITHUB_EVENT_NAME run passed. $RUN_URL"
+            fi
+            exit 0
+          fi
+          MESSAGE="The $GITHUB_EVENT_NAME run on \`$GITHUB_REF_NAME\` failed: $RUN_URL"
+          if [ -n "$ISSUE" ]; then
+            gh issue comment "$ISSUE" --body "$MESSAGE"
+          else
+            gh label create "$LABEL" --color B60205 --description "Build, rescan or promotion failed" --force
+            gh issue create --title "Wolfi image build failing on main" --label "$LABEL" --body "$MESSAGE
+
+          A stream failed to build or test, picked up a fixable HIGH/CRITICAL vulnerability, or did not finish promoting. Tags stay on the last approved digest until a run passes. The next lock refresh usually ships the fix; accepted findings go in \`vex/\`. This issue closes automatically when the next full run (daily or manual) passes."
+          fi

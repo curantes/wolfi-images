@@ -1,0 +1,111 @@
+name: Locks - Refresh
+
+# Re-resolves every apko lock against the current Wolfi index. When a package
+# changed, opens (or updates) one PR that automerges once "Build Result"
+# passes; most Wolfi updates are CVE fixes, so there is no waiting period.
+#
+# PRs opened with GITHUB_TOKEN don't trigger workflows, so this uses a GitHub
+# App token (vars.BOT_APP_ID, secrets.BOT_APP_PRIVATE_KEY) with contents and
+# pull-requests write access.
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  # renovate: datasource=github-releases depName=chainguard-dev/apko
+  APKO_VERSION: 1.4.13
+  BRANCH: bot/refresh-locks
+
+jobs:
+  refresh:
+    name: Refresh Locks
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Create App Token
+        id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
+      - name: Checkout Source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Install apko
+        uses: ./.github/actions/setup-apko
+        with:
+          version: ${{ env.APKO_VERSION }}
+
+      - name: Refresh Locks
+        run: scripts/lock.sh
+
+      - name: Summarise Package Changes
+        id: diff
+        run: |
+          if git diff --quiet -- generated/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "All locks are current."
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          # One line per changed lock: added/updated packages on x86_64.
+          {
+            echo "Wolfi package updates:"
+            echo
+            for lock in $(git diff --name-only -- 'generated/*.lock.json'); do
+              CHANGES="$(jq -r -n --slurpfile old <(git show "HEAD:$lock" 2>/dev/null || echo '{"contents":{"packages":[]}}') \
+                --slurpfile new "$lock" '
+                def pkgs(x): x.contents.packages | map(select(.architecture == "x86_64") | {(.name): .version}) | add // {};
+                (pkgs($old[0])) as $o | (pkgs($new[0])) as $n
+                | [$n | to_entries[] | select($o[.key] != .value) | "\(.key) \($o[.key] // "new") → \(.value)"] | join(", ")')"
+              echo "- \`$lock\`: ${CHANGES:-architecture-specific changes only}"
+            done
+          } > body.md
+          cat body.md
+
+      - name: Open or Update PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          git config user.name "wolfi-images-bot"
+          git config user.email "wolfi-images-bot@users.noreply.github.com"
+          git switch -C "$BRANCH"
+          git add generated/
+          git commit -q -F - <<'EOF'
+          chore(locks): refresh apko locks
+
+          Re-resolve the apko locks against the current Wolfi index. See the
+          PR description for the package changes.
+          EOF
+          git push -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$BRANCH"
+          PR="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$PR" ]; then
+            gh label create locks --color 0E8A16 --description "Automated apko lock refresh" --force
+            PR="$(gh pr create --head "$BRANCH" --title "chore(locks): refresh apko locks" \
+              --body-file body.md --label locks | grep -oE '[0-9]+$')"
+          else
+            gh pr edit "$PR" --body-file body.md
+          fi
+          gh pr merge "$PR" --auto --squash
