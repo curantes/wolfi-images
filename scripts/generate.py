@@ -15,11 +15,14 @@ For every images/<name>/image.yaml:
 4. Write generated/catalog.json and generated/<name>/<tag>.apko.yaml, and
    remove configs and locks of streams that are no longer built.
 
-A stream counts as maintained only if its package's newest public build is
-at most MAX_AGE_DAYS old (per image: `max-age-days`) and Wolfi's security
-database lists no fix newer than it. Public Wolfi stops updating older
-streams (their fixes appear only in the security database), so a package
-existing is not enough.
+A stream counts as maintained only if Wolfi's security database lists no
+fix newer than its package's newest public build and, for per-version
+packages (python-{stream}), that build is at most MAX_AGE_DAYS old (per
+image: `max-age-days`). Public Wolfi stops updating older streams (their
+fixes appear only in the security database), so a package existing is not
+enough. Rolling packages (glibc, git) have no newer stream to be abandoned
+for, and a stable one can go months without a rebuild, so only the
+security check applies to them.
 
 Products without endoflife.date data have one rolling stream (see
 rolling_releases); `newest-only: true` builds only the newest cycle Wolfi
@@ -113,8 +116,11 @@ def load_secdb(offline: Path | None) -> dict[str, list[str]]:
     }
 
 
-def maintenance(package: str, indexes, secdb, today: dt.date, max_age: int) -> list[str]:
-    """Reasons a package is not maintained in public Wolfi (empty = maintained)."""
+def maintenance(package: str, indexes, secdb, today: dt.date, max_age: int | None) -> list[str]:
+    """Reasons a package is not maintained in public Wolfi (empty = maintained).
+
+    max_age None skips the build-age check (rolling packages).
+    """
     why = []
     for arch, idx in indexes.items():
         published = max(idx[package], key=apk_key)
@@ -125,6 +131,8 @@ def maintenance(package: str, indexes, secdb, today: dt.date, max_age: int) -> l
                 f"but publishes {published} ({arch})"
             )
             break
+    if max_age is None:
+        return why
     built = min(BUILD_TIMES.get(arch, {}).get(package, 0) for arch in indexes)
     age = (today - dt.datetime.fromtimestamp(built, dt.UTC).date()).days if built else None
     if age is not None and age > max_age:
@@ -256,12 +264,12 @@ def wolfi_streams(
     result: dict[str, tuple[str | None, list[str]]] = {}
     for rel in releases:
         stream = rel["name"]
-        provider, why = None, []
+        provider, why, versioned = None, [], False
         for tpl in templates(spec):
             if "{stream}" in tpl:
                 candidate = tpl.replace("{stream}", stream)
                 if not in_wolfi(indexes, [candidate]):
-                    provider = candidate
+                    provider, versioned = candidate, True
                     break
                 why.append(f"no {candidate}")
             elif "stream" in spec:  # fixed stream name (latest): no version to match
@@ -283,7 +291,8 @@ def wolfi_streams(
         )
         why = in_wolfi(indexes, needed)
         if not why and provider and secdb is not None and today is not None:
-            why = maintenance(provider, indexes, secdb, today, int(spec.get("max-age-days", MAX_AGE_DAYS)))
+            max_age = int(spec.get("max-age-days", MAX_AGE_DAYS)) if versioned else None
+            why = maintenance(provider, indexes, secdb, today, max_age)
         result[stream] = (provider, why)
     if spec.get("newest-only"):
         # Only the newest cycle Wolfi provides is built; older cycles are
