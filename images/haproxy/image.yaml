@@ -1,0 +1,26 @@
+# HAProxy. Ships no configuration: mount one at /usr/local/etc/haproxy/haproxy.cfg.
+endoflife: haproxy
+package: haproxy-{stream}
+description: HAProxy {stream}
+
+common: &common
+  entrypoint: /usr/bin/haproxy
+  cmd: -W -db -f /usr/local/etc/haproxy/haproxy.cfg
+  paths:
+    - path: /usr/local/etc/haproxy
+      type: directory
+      uid: 0
+      gid: 0
+      permissions: 0o755
+
+variants:
+  "":
+    <<: *common
+    packages:
+      - haproxy-{stream}
+  dev:
+    <<: *common
+    packages:
+      - haproxy-{stream}
+      - wolfi-base
+      - bash

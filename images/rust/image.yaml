@@ -1,0 +1,18 @@
+# Rust toolchain (rustc, cargo, clippy, rustfmt). Build stage only: run the
+# result on glibc-dynamic or static, so there is no distroless variant.
+endoflife: rust
+package: rust-{stream}
+description: Rust {stream} toolchain
+
+variants:
+  dev:
+    packages:
+      - rust-{stream}
+      - build-base
+      - git
+      - openssh-client
+      - wolfi-base
+      - bash
+    entrypoint: /usr/bin/cargo
+    environment:
+      CARGO_HOME: /home/nonroot/.cargo

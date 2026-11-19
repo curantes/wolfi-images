@@ -1,0 +1,21 @@
+# git with HTTPS and SSH remotes. Wolfi only packages the newest git, so only
+# the newest supported cycle is built (older maintenance branches are neither
+# built nor reported as missing).
+endoflife: git
+package: git
+newest-only: true
+description: git {stream}
+
+variants:
+  "":
+    packages:
+      - git
+      - openssh-client
+    entrypoint: /usr/bin/git
+  dev:
+    packages:
+      - git
+      - openssh-client
+      - wolfi-base
+      - bash
+    entrypoint: /usr/bin/git

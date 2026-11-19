@@ -1,0 +1,30 @@
+# etcd with etcdctl and etcdutl. Client port 2379, peer port 2380, data in
+# /var/lib/etcd.
+endoflife: etcd
+package: etcd-{stream}
+description: etcd {stream}
+
+common: &common
+  entrypoint: /usr/bin/etcd
+  environment:
+    ETCD_DATA_DIR: /var/lib/etcd
+    ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+    ETCD_ADVERTISE_CLIENT_URLS: http://localhost:2379
+  paths:
+    - path: /var/lib/etcd
+      type: directory
+      uid: 65532
+      gid: 65532
+      permissions: 0o700
+
+variants:
+  "":
+    <<: *common
+    packages:
+      - etcd-{stream}
+  dev:
+    <<: *common
+    packages:
+      - etcd-{stream}
+      - wolfi-base
+      - bash

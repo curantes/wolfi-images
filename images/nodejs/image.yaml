@@ -1,0 +1,19 @@
+# Node.js. The default variant has no npm: install dependencies in -dev and
+# copy node_modules over.
+endoflife: nodejs
+package: nodejs-{stream}
+description: Node.js {stream}
+
+variants:
+  "":
+    packages:
+      - nodejs-{stream}
+    entrypoint: /usr/bin/node
+  dev:
+    packages:
+      - nodejs-{stream}
+      - npm
+      - build-base
+      - wolfi-base
+      - bash
+    entrypoint: /usr/bin/node

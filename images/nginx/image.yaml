@@ -1,0 +1,46 @@
+# nginx: Wolfi packages the stable and mainline branches as nginx-stable and
+# nginx-mainline; each provides the endoflife.date cycle matching its version.
+# Wolfi's package-config serves a default page on 8080; configuration in
+# /etc/nginx/conf.d/. Logs go to stdout/stderr. To run as non-root (and an
+# arbitrary UID with GID 0), the pid file is pre-created writable and nginx's
+# temp and prefix log directories are group-writable.
+endoflife: nginx
+package:
+  - nginx-stable
+  - nginx-mainline
+description: nginx {stream}
+
+common: &common
+  entrypoint: /usr/bin/nginx
+  cmd: -g "daemon off;"
+  paths:
+    # Pre-created so nginx can rewrite it without write access to /run
+    - path: /run/nginx.pid
+      type: empty-file
+      uid: 65532
+      gid: 0
+      permissions: 0o660
+    - path: /var/lib/nginx/tmp
+      type: directory
+      uid: 65532
+      gid: 0
+      permissions: 0o770
+    - path: /var/lib/nginx/logs
+      type: directory
+      uid: 65532
+      gid: 0
+      permissions: 0o770
+
+variants:
+  "":
+    <<: *common
+    packages:
+      - "{package}"
+      - "{package}-package-config"
+  dev:
+    <<: *common
+    packages:
+      - "{package}"
+      - "{package}-package-config"
+      - wolfi-base
+      - bash
