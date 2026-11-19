@@ -2,8 +2,8 @@
 # setting IMAGE and TAG.
 #
 #   check_common   user 65532, no setuid/setgid files, and the variant
-#                  contract: the base image has no shell and no apk, -dev
-#                  has both
+#                  contract: -dev has a shell and apk, every other variant
+#                  has neither (ALLOW_SHELL=1 allows a shell)
 
 ENGINE="${CONTAINER_ENGINE:-docker}"
 STREAM="${TAG%%-*}"
@@ -38,12 +38,15 @@ check_common() {
       succeeds /bin/sh -c true || fail "-dev must ship /bin/sh"
       succeeds /sbin/apk --version || fail "-dev must ship apk"
       ;;
-    "")
-      ! succeeds /bin/sh -c true || fail "default variant ships /bin/sh"
-      ! succeeds /bin/busybox true || fail "default variant ships busybox"
-      ! succeeds /sbin/apk --version || fail "default variant ships apk"
+    *)
+      # Every other variant (default, fpm, ...) is distroless. An image that
+      # must ship a shell sets ALLOW_SHELL=1 and tests it explicitly.
+      if [ "${ALLOW_SHELL:-0}" != 1 ]; then
+        ! succeeds /bin/sh -c true || fail "variant '${VARIANT:-default}' ships /bin/sh"
+        ! succeeds /bin/busybox true || fail "variant '${VARIANT:-default}' ships busybox"
+      fi
+      ! succeeds /sbin/apk --version || fail "variant '${VARIANT:-default}' ships apk"
       ;;
-    *) fail "unknown variant '$VARIANT'" ;;
   esac
 }
 
