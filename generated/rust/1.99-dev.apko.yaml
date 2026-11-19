@@ -47,6 +47,7 @@ annotations:
   org.opencontainers.image.title: rust:1.99-dev
   org.opencontainers.image.description: Rust 1.99 toolchain
   io.github.curantes.wolfi-images.stream: '1.99'
-  io.github.curantes.wolfi-images.status: supported
+  io.github.curantes.wolfi-images.status: deprecated
+  io.github.curantes.wolfi-images.eol: '2026-11-12'
 entrypoint:
   command: /usr/bin/cargo

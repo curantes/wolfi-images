@@ -38,8 +38,8 @@
       },
       "missing": {
         "22": [
-          "unmaintained: Wolfi lists fixes up to 22.23.4-r0 but publishes 22.23.2-r1 (x86_64)",
-          "unmaintained: newest nodejs-22 build is 92 days old (limit 90)"
+          "unmaintained: Wolfi lists fixes up to 22.23.5-r0 but publishes 22.23.2-r1 (x86_64)",
+          "unmaintained: newest nodejs-22 build is 104 days old (limit 90)"
         ]
       }
     },
@@ -124,9 +124,13 @@
     "rust": {
       "endoflife": "rust",
       "streams": {
-        "1.99": {
+        "1.100": {
           "status": "supported",
           "eol": null
+        },
+        "1.99": {
+          "status": "deprecated",
+          "eol": "2026-11-12"
         }
       },
       "missing": {}
@@ -607,12 +611,23 @@
     },
     {
       "name": "rust",
+      "tag": "1.100-dev",
+      "stream": "1.100",
+      "variant": "dev",
+      "package": "rust-1.100",
+      "status": "supported",
+      "eol": null,
+      "config": "generated/rust/1.100-dev.apko.yaml",
+      "lock": "generated/rust/1.100-dev.lock.json"
+    },
+    {
+      "name": "rust",
       "tag": "1.99-dev",
       "stream": "1.99",
       "variant": "dev",
       "package": "rust-1.99",
-      "status": "supported",
-      "eol": null,
+      "status": "deprecated",
+      "eol": "2026-11-12",
       "config": "generated/rust/1.99-dev.apko.yaml",
       "lock": "generated/rust/1.99-dev.lock.json"
     },
